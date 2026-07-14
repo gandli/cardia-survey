@@ -1,38 +1,52 @@
-# 心脏检查 · 心研-01 (cardia-survey)
+# CARDIA-01 · Cadaveric Tissue Survey
 
-基于 [carolinacherry/cardia-survey](https://github.com/carolinacherry/cardia-survey) 的本地化重构版本：
-Vite + React 工程，中文界面、医学化语境（心脏检查）、移动端自适应。
+A sci-fi "field survey" scanner rendered entirely in the browser: a beating, photoreal human heart floating in a studio, scanned region-by-region with animated HUD overlays, a live ECG trace, a macro-optics tracking panel, and a synthesized heartbeat. No engine, no build step — one HTML file, Three.js, and the Web Audio API.
 
-## 技术栈
-- Vite 5 + React 18
-- three 0.160（3D 心脏渲染、扫描高亮着色器）
-- Web Audio API（全部音效合成，无外部音频文件）
+### ▶ Live demo — **https://carolinacherry.github.io/cardia-survey/**
+*(click anywhere to enable sound)*
 
-## 本地运行
+![demo](media/cardia-survey.gif)
+
+▶ **Full clip with sound:** [`media/cardia-survey.mp4`](media/cardia-survey.mp4)
+
+## Run it locally
+
+It's a static site, but it **must be served over HTTP** — opening `index.html` directly with `file://` won't work, because the browser blocks ES-module imports and the `.glb` model fetch under that scheme. Any static server does the job:
+
 ```bash
-bun install        # 或 npm install
-bun run dev        # 开发服务器 http://localhost:5173
-bun run build      # 生产构建到 dist/
-bun run preview    # 预览构建产物（--host 可局域网访问）
+git clone https://github.com/carolinacherry/cardia-survey.git
+cd cardia-survey
+
+# pick one:
+python3 -m http.server 4173      # Python 3
+npx serve -l 4173                # Node (npx)
+php -S localhost:4173            # PHP
 ```
 
-## 目录结构
-```
-src/
-  main.jsx                  React 入口
-  App.jsx                   HUD DOM 骨架 + 挂载引擎
-  engine/heartEngine.js     Three.js + WebAudio + 状态机 + 渲染循环（原逻辑封装为类）
-  data/specimens.js         心脏标本序列（中文医学化）
-  styles.css                样式 + 移动端媒体查询
-public/assets/heart.glb     3D 心脏模型
-```
+Then open **http://localhost:4173** and click anywhere (or the audio button) to enable sound — browsers keep audio muted until a user gesture.
 
-## 适配说明
-- 宽屏（>700 且高>480）：走作者原尺寸布局
-- 高屏手机：面板置于顶部两角，不侵入心脏区
-- 矮屏/横屏：面板显示完整内容（不裁切）
+That's the whole setup. No install, no dependencies, no API keys — Three.js loads from a CDN at runtime.
 
-## 说明
-- 原始项目为第三方开源 demo，本仓库在其基础上做中文化、医学语境替换与工程化重构，
-  产品交互逻辑与原作一致。
-- 声音需在页面内点击「声音 关」按钮启用（浏览器自动播放策略）。
+## What's in it
+
+- **Beating heart** — a real cardiac contraction cycle (~68 bpm) drives the mesh scale, a subtle exposure "flush," and a vertical thump.
+- **Live ECG** — a scrolling PQRST waveform in the survey panel, locked to the same beat clock.
+- **Surface scan sweep** — a world-space glow follows the reticle across the heart, with an expanding ring pulse on lock (shader-injected into the model material via `onBeforeCompile`).
+- **On-surface reticle** — anchors are raycast onto the real mesh at load and stored in model space, so the target stays glued to the surface as the heart rotates.
+- **Macro optics** — a second camera renders a live magnified view of whatever region is being scanned.
+- **Synthesized audio** — ambient drone, scan ticks, lock chimes, and a "lub-dub" heartbeat, all generated at runtime (no samples), through a limiter for clean capture.
+- **Record & replay** — `● REC` captures the page + synth audio straight to a `.webm` (via `getDisplayMedia` + `MediaRecorder`); `↻ REPLAY` rewinds to the entrance for a clean take.
+
+## Stack
+
+Vanilla HTML/CSS/JS · [Three.js](https://threejs.org) r160 (CDN) · Web Audio API · SVG overlays. Everything lives in a single self-contained `index.html`.
+
+## Credits
+
+- **Inspiration:** the viral floating-rock field-survey demo by Ray Velez ([@pascowebdesigns](https://x.com/pascowebdesigns)), built with [HyperFrames](https://hyperframes.heygen.com/). This is a from-scratch reinterpretation as a human heart.
+- **3D heart model:** `assets/heart.glb` — third-party asset, included for the demo.
+- **Type:** IBM Plex Mono.
+
+## License
+
+[MIT](LICENSE) © 2026 Daniel An. Applies to the code in this repository; bundled third-party assets (the heart model, fonts) retain their own terms.
