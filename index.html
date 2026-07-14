@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>心脏检查 · 心研-01</title>
+<title>FIELD SURVEY · PETRA-06</title>
 <link rel="icon" href="data:,">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --panel-bg: rgba(24,26,24,0.88);
@@ -20,7 +17,7 @@
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%;overflow:hidden}
   body{
-    font-family:"Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+    font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
     /* cool studio seamless: key light falls from upper-right into deeper grey */
     background:
       radial-gradient(135% 105% at 68% 26%, #edeef1 0%, #dbdde2 44%, #c4c6cd 78%, #b3b5be 100%);
@@ -190,60 +187,13 @@
   @keyframes grain{
     0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-3%)}100%{transform:translate(0,0)}}
   @media (prefers-reduced-motion:reduce){#grain{animation:none}}
-  /* 移动布局触发: 手机竖屏(宽≤700) 或 横屏手机(高≤480). 其余宽屏走桌面原尺寸 */
-  @media (max-width:700px), (max-height:480px){
-    /* 面板移到顶部两角, 高度上限 = 心脏区上界(top:34)内, 既不全挡心脏也不裁切 */
-    #survey{left:12px;top:34px;bottom:auto;transform:none;width:168px;z-index:20;max-height:calc(28vh - 34px);overflow:hidden}
-    #macro{right:12px;top:34px;bottom:auto;transform:none;width:156px;z-index:20;max-height:calc(28vh - 34px);overflow:hidden}
-    #macro-window{width:120px;height:108px}
-    /* 移动端精简 HUD: 隐藏描述/位置行, 紧凑间距, 内容在 max-height 内完整显示 */
-    #spec-desc{display:none}
-    #survey .ft,#macro .ft{display:none}
-    #ecg{height:18px;margin:2px 0 5px}
-    #survey .meter,#macro .meter{margin:3px 0;font-size:8px}
-    #survey .bd,#macro .bd{padding:7px 10px 9px}
-    /* 顶部按钮移到底部居中工具栏, 触摸目标 ≥44px, 始终在面板之上 */
-    #rec-btn,#replay-btn,#audio-btn{
-      top:auto;bottom:14px;padding:13px 14px;font-size:10px;
-      min-height:44px;box-sizing:border-box;z-index:60;
-      display:inline-flex;align-items:center;justify-content:center;
-    }
-    #rec-btn{right:10px}
-    #replay-btn{right:82px}
-    #audio-btn{right:146px}
-    /* 提示对齐音频按钮(右缘上方) */
-    #audio-hint{top:auto;bottom:62px;right:146px;text-align:right;white-space:nowrap;width:auto;z-index:60}
-    #brand{font-size:8px;letter-spacing:0.18em;top:14px;left:14px;z-index:30}
-    /* 完成标题移到屏幕中部, 避开底部按钮栏 */
-    #complete{bottom:auto;top:46%;transform:translate(-50%,-50%);font-size:10px;letter-spacing:0.3em;width:auto;white-space:nowrap;z-index:40}
-    #complete .sub{font-size:8px;letter-spacing:0.24em;margin-top:4px}
-  }
-  @media (max-width:480px){
-    #survey{width:150px;top:34px;max-height:calc(28vh - 34px)}
-    #macro{width:142px;top:34px;max-height:calc(28vh - 34px)}
-    #macro-window{width:108px;height:96px}
-    #rec-btn,#replay-btn,#audio-btn{padding:12px 10px;font-size:9px;bottom:12px;min-height:44px}
-    #rec-btn{right:8px}
-    #replay-btn{right:74px}
-    #audio-btn{right:140px}
-    #audio-hint{bottom:58px;right:140px;font-size:7px}
-  }
-  /* 矮竖屏(高 481-600, 如 320x568): 垂直空间不足以同时"完整显示+不挡心脏",
-     优先显示全(不裁切), 面板自然高度置于顶部, 允许轻微盖住心脏上缘 */
-  @media (max-height:600px) and (min-height:481px){
-    #survey,#macro{max-height:none}
-  }
-  /* 横屏手机(高≤480): 完整覆盖桌面定位, 隐藏指标行, 仅留进度/名称/ECG, 显示全不裁切 */
-  @media (max-height:480px){
-    #survey,#macro{top:10px;transform:none;bottom:auto;left:12px;right:auto;max-height:none}
-    #macro{right:12px;left:auto}
-    #macro-window{width:80px;height:76px}
-    #ecg{height:12px;margin:1px 0 3px}
-    #spec-name{font-size:10px;line-height:1.15}
-    #survey .meter,#macro .meter{display:none}
-    #survey .bd,#macro .bd{padding:5px 8px 7px}
-  }
 
+  @media (max-width:820px){
+    #survey{left:12px;top:auto;bottom:16px;transform:none;width:210px}
+    #macro{right:12px;transform:translateY(-64%);width:190px}
+    #macro-window{width:166px;height:172px}
+  }
+</style>
 </head>
 <body>
 <div id="stage">
@@ -269,12 +219,12 @@
 
   <div class="panel" id="survey">
     <div class="hd">
-      <span class="lft"><span class="dot" id="survey-dot"></span> 心脏检查</span>
-      <span id="scan-state">扫描中</span>
+      <span class="lft"><span class="dot" id="survey-dot"></span> FIELD SURVEY</span>
+      <span id="scan-state">SCAN ACTIVE</span>
     </div>
     <div class="bd">
       <div id="progress"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div id="spec-count">切面 01 / 06</div>
+      <div id="spec-count">REGION 01 / 06</div>
       <div id="spec-name"><span id="spec-name-txt"></span><span class="cursor"></span></div>
       <div id="spec-desc"></div>
       <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none">
@@ -282,17 +232,17 @@
           stroke-linejoin="round" stroke-linecap="round"/>
         <circle id="ecg-dot" r="1.7" fill="#a8e6c9"/>
       </svg>
-      <div class="meter"><span>活性</span><span class="track"><span class="fill" id="bar-vit"></span></span><span class="val" id="val-vit">0.00</span></div>
-      <div class="meter"><span>灌注</span><span class="track"><span class="fill" id="bar-lum"></span></span><span class="val" id="val-lum">0.00</span></div>
-      <div class="meter" id="meter-tox"><span>钙化</span><span class="track"><span class="fill" id="bar-tox"></span></span><span class="val" id="val-tox">0.00</span></div>
-      <div class="ft"><span id="pos-txt">位置 0000 · 0000</span><span id="alt-txt">径线 0000</span></div>
+      <div class="meter"><span>VIT</span><span class="track"><span class="fill" id="bar-vit"></span></span><span class="val" id="val-vit">0.00</span></div>
+      <div class="meter"><span>LUM</span><span class="track"><span class="fill" id="bar-lum"></span></span><span class="val" id="val-lum">0.00</span></div>
+      <div class="meter" id="meter-tox"><span>TOX</span><span class="track"><span class="fill" id="bar-tox"></span></span><span class="val" id="val-tox">0.00</span></div>
+      <div class="ft"><span id="pos-txt">POS 0000 · 0000</span><span id="alt-txt">Ø 0000</span></div>
     </div>
   </div>
 
   <div class="panel" id="macro">
     <div class="hd">
-      <span class="lft"><span class="dot"></span> 显微观测</span>
-      <span id="macro-mode">跟踪中</span>
+      <span class="lft"><span class="dot"></span> MACRO OPTICS</span>
+      <span id="macro-mode">TRACKING</span>
     </div>
     <div class="strip"></div>
     <div class="win-row">
@@ -306,17 +256,17 @@
       <div class="side"></div>
     </div>
     <div class="strip btm"></div>
-    <div class="ft"><span id="mag-txt">倍率 2.24×</span><span id="sp-txt">序列-01</span></div>
+    <div class="ft"><span id="mag-txt">MAG 2.24×</span><span id="sp-txt">SP-01</span></div>
   </div>
 
-  <div id="brand">◦ 心研-01 · 身体组织检查</div>
-  <button id="rec-btn">● 录制</button>
-  <button id="replay-btn">↻ 重播</button>
-  <button id="audio-btn">声音关</button>
-  <div id="audio-hint">点击启用声音</div>
+  <div id="brand">◦ CARDIA-01 · CADAVERIC TISSUE SURVEY</div>
+  <button id="rec-btn">● REC</button>
+  <button id="replay-btn">↻ REPLAY</button>
+  <button id="audio-btn">AUDIO OFF</button>
+  <div id="audio-hint">CLICK TO ENABLE SOUND</div>
 
-  <div id="complete">检查完成<div class="sub">06 个切面已采集 · 心功能正常</div></div>
-  <div id="loading">影像校准…</div>
+  <div id="complete">SURVEY COMPLETE<div class="sub">06 REGIONS ARCHIVED · SPECIMEN VIABLE</div></div>
+  <div id="loading">CALIBRATING OPTICS…</div>
   <div id="vignette"></div>
   <div id="grain"></div>
 </div>
@@ -366,17 +316,17 @@ rockGroup.add(rock);
 // cardiac "specimens" — anchors are hand-placed in local model space (unit-ish),
 // resolved to real coordinates after the GLB bounds are known.
 const SPECIMENS = [
-  {name:'升主动脉', desc:'大血管 · 流出道',
+  {name:'AORTA ASCENDENS', desc:'great vessel · outflow tract',
    vit:0.88, lum:0.20, tox:0.06, a:[0.10, 0.92, 0.05], macroDist:1.15},
-  {name:'右心房',  desc:'右心房 · 静脉回流',
+  {name:'ATRIUM DEXTRUM',  desc:'right atrium · venous return',
    vit:0.81, lum:0.14, tox:0.10, a:[0.62, 0.34, 0.20], macroDist:1.05},
-  {name:'左心室', desc:'左心室 · 心肌',
+  {name:'VENTRIC. SINISTER', desc:'left ventricle · myocardium',
    vit:0.94, lum:0.22, tox:0.04, a:[-0.55, -0.10, 0.30], macroDist:1.0},
-  {name:'冠状动脉', desc:'冠状沟 · 灌注良好',
+  {name:'ARTERIA CORONARIA', desc:'coronary groove · perfused',
    vit:0.76, lum:0.31, tox:0.18, a:[0.15, 0.05, 0.72], macroDist:0.9},
-  {name:'左心耳',   desc:'左心耳 · 小梁状',
+  {name:'AURICULA SIN.',   desc:'left auricle · trabeculated',
    vit:0.72, lum:0.17, tox:0.22, a:[-0.48, 0.44, 0.35], macroDist:0.95},
-  {name:'心尖',     desc:'心尖 · 收缩部',
+  {name:'APEX CORDIS',     desc:'cardiac apex · contractile',
    vit:0.90, lum:0.26, tox:0.05, a:[-0.05, -0.86, 0.10], macroDist:1.05},
 ];
 
@@ -589,7 +539,7 @@ const Audio = (()=>{
 const audioBtn = document.getElementById('audio-btn');
 const audioHint = document.getElementById('audio-hint');
 function setAudio(on){
-  audioBtn.textContent = on ? '声音开' : '声音关';
+  audioBtn.textContent = on ? 'AUDIO ON' : 'AUDIO OFF';
   audioBtn.classList.toggle('on', on);
   audioHint.style.opacity = '0';
 }
@@ -639,12 +589,12 @@ async function startRecording(){
       recDisplay.getTracks().forEach(t=>t.stop());
       document.body.classList.remove('capturing');   // restore dev chrome
       clearTimeout(recAutoStop);
-      recBtn.classList.remove('recording'); recBtn.textContent = '● 录制';
+      recBtn.classList.remove('recording'); recBtn.textContent = '● REC';
     };
     // if the user hits Chrome's "Stop sharing", finish cleanly
     recDisplay.getVideoTracks()[0].addEventListener('ended', stopRecording);
     mediaRec.start();
-    recBtn.classList.add('recording'); recBtn.textContent = '■ 停止';
+    recBtn.classList.add('recording'); recBtn.textContent = '■ STOP';
     // hide dev buttons for a clean frame; auto-stop after one full loop (~33s)
     document.body.classList.add('capturing');
     recAutoStop = setTimeout(stopRecording, 33000);
@@ -652,7 +602,7 @@ async function startRecording(){
   }catch(err){
     console.warn('recording cancelled:', err);
     document.body.classList.remove('capturing');
-    recBtn.classList.remove('recording'); recBtn.textContent = '● 录制';
+    recBtn.classList.remove('recording'); recBtn.textContent = '● REC';
   }
 }
 function stopRecording(){ if(mediaRec && mediaRec.state !== 'inactive') mediaRec.stop(); }
@@ -717,7 +667,7 @@ let lastTick = 0;
 
 function showSpecimen(i){
   const s = SPECIMENS[i];
-  specCount.textContent = `切面 0${i+1} / 06`;
+  specCount.textContent = `REGION 0${i+1} / 06`;
   scrambleTo(specName, s.name, 500);
   scrambleTo(specDesc, s.desc, 620);
   barVit.style.width = (s.vit*100)+'%';
@@ -725,13 +675,13 @@ function showSpecimen(i){
   barTox.style.width = (s.tox*100)+'%';
   animNum(valVit, s.vit); animNum(valLum, s.lum); animNum(valTox, s.tox);
   meterTox.classList.toggle('hot', s.tox>0.3);
-  scanState.textContent = '扫描中';
+  scanState.textContent = 'SCAN ACTIVE';
   surveyDot.classList.remove('done');
-  spTxt.textContent = `序列-0${i+1}`;
-  magTxt.textContent = `倍率 ${(1.8+((i*37)%90)/100).toFixed(2)}×`;
-  posTxt.textContent = `位置 ${String(1000+((i*613)%900)).padStart(4,'0')} · 0${String(400+((i*271)%500)).padStart(3,'0')}`;
-  altTxt.textContent = `径线 0${String(380+((i*97)%240)).padStart(3,'0')}`;
-  macroMode.textContent = '跟踪中';
+  spTxt.textContent = `SP-0${i+1}`;
+  magTxt.textContent = `MAG ${(1.8+((i*37)%90)/100).toFixed(2)}×`;
+  posTxt.textContent = `POS ${String(1000+((i*613)%900)).padStart(4,'0')} · 0${String(400+((i*271)%500)).padStart(3,'0')}`;
+  altTxt.textContent = `Ø 0${String(380+((i*97)%240)).padStart(3,'0')}`;
+  macroMode.textContent = 'TRACKING';
   macroFlash.animate([{opacity:0.85},{opacity:0}],{duration:420,easing:'ease-out'});
   retOuter.animate([{r:22},{r:8}],{duration:500,easing:'cubic-bezier(0.22,1,0.36,1)'});
   // timing markers: draw-on starts now, ring fires when the line arrives
@@ -745,12 +695,12 @@ function showSpecimen(i){
 }
 function enterComplete(){
   phase='complete'; phaseStart=performance.now()/1000;
-  specCount.textContent = '序列 06 / 06';
-  scrambleTo(specName, '检查完成', 550);
-  scrambleTo(specDesc, '全部序列已采集', 620);
-  scanState.textContent = '已采集';
+  specCount.textContent = 'SPECIMENS 06 / 06';
+  scrambleTo(specName, 'SURVEY COMPLETE', 550);
+  scrambleTo(specDesc, 'all specimens archived', 620);
+  scanState.textContent = 'ARCHIVED';
   surveyDot.classList.add('done');
-  macroMode.textContent = '已采集';
+  macroMode.textContent = 'ARCHIVE';
   barVit.style.width='75%'; barLum.style.width='39%'; barTox.style.width='17%';
   animNum(valVit,0.75); animNum(valLum,0.39); animNum(valTox,0.17);
   meterTox.classList.remove('hot');
@@ -773,13 +723,13 @@ function restartSurvey(){
   specShownAt=-99; ringStart=-99; lastBeatIdx=-1; archivedShown=false;
   scanPath.setAttribute('d',''); scanHalo.setAttribute('d','');
   reticle.style.opacity='0'; completeCap.style.opacity='0';
-  scanState.textContent='扫描中'; surveyDot.classList.remove('done');
-  macroMode.textContent='跟踪中';
+  scanState.textContent='SCAN ACTIVE'; surveyDot.classList.remove('done');
+  macroMode.textContent='TRACKING';
   progSegs.forEach(s=>s.classList.remove('done','active'));
   scanU.uScanStrength.value=0; scanU.uRingStrength.value=0;
   // clear the panel back to its pre-scan look (don't linger on SURVEY COMPLETE)
   clearInterval(scramblers.get(specName)); clearInterval(scramblers.get(specDesc));
-  specCount.textContent='切面 01 / 06';
+  specCount.textContent='REGION 01 / 06';
   specName.textContent=''; specDesc.textContent='';
   barVit.style.width='0%'; barLum.style.width='0%'; barTox.style.width='0%';
   valVit.textContent='0.00'; valLum.textContent='0.00'; valTox.textContent='0.00';
@@ -880,7 +830,7 @@ function render(nowMs){
     else if(t-phaseStart>SCAN_DUR){ nextSpecimen(); }
     else if(!archivedShown && t-phaseStart>SCAN_DUR-0.65){
       archivedShown = true;
-      scanState.textContent = '已采集';
+      scanState.textContent = 'ARCHIVED';
       surveyDot.classList.add('done');
       Audio.lock();
     }
