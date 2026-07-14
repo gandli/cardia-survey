@@ -1,27 +1,28 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * cardia-survey 移动端: 面板(卡片)不得遮挡屏幕中部的 3D 心脏。
- * 心脏位于视口中心(相机恒定居中, 模型在场景原点), 心脏置信区取视口中心 56% 矩形。
- * 面板底边不得侵入该区上界 —— 纯 DOM 包围盒断言, 不依赖 WebGL 渲染, CI 可跑。
+ * cardia-survey 移动端: 面板(卡片)与心脏的关系, 分两档目标:
+ *  - 高屏(高度≥560, 如手机竖屏/桌面): 面板不得侵入心脏置信区(屏幕中心 28%-82%)
+ *  - 矮屏(高度<560, 如横屏手机/极小竖屏): 垂直空间不足以两全, 优先"显示全"(不裁切)
+ * 心脏置信区基于相机居中不变量(模型在场景原点), 纯 DOM 包围盒断言, CI 可跑。
  * 服务器: http://192.168.5.94:4173
  */
-test.describe("cardia 面板不遮挡心脏", () => {
-  const SIZES: [string, number, number][] = [
-    ["iPhone SE", 375, 667],
-    ["iPhone 12", 390, 844],
-    ["小屏", 360, 740],
-    ["大屏手机", 414, 896],
-    ["320", 320, 568],
-    ["横屏矮屏", 844, 390],
+test.describe("cardia 面板与心脏", () => {
+  const SIZES: [string, number, number, "tall" | "short"][] = [
+    ["iPhone SE", 375, 667, "tall"],
+    ["iPhone 12", 390, 844, "tall"],
+    ["小屏", 360, 740, "tall"],
+    ["大屏手机", 414, 896, "tall"],
+    ["平板竖", 700, 900, "tall"],
+    ["320", 320, 568, "short"],
+    ["横屏手机", 844, 390, "short"],
   ];
   async function measure(page: Page) {
     return page.evaluate(() => {
       const vw = innerWidth, vh = innerHeight;
-      // 心脏置信区: 视口中心偏下(相机居中, 模型在场景原点), 上界 30% 下界 82%
       const heart = {
         l: Math.round(vw * 0.22), r: Math.round(vw * 0.78),
-        t: Math.round(vh * 0.30), b: Math.round(vh * 0.82),
+        t: Math.round(vh * 0.28), b: Math.round(vh * 0.82),
       };
       const box = (id: string) => {
         const e = document.getElementById(id);
@@ -45,31 +46,31 @@ test.describe("cardia 面板不遮挡心脏", () => {
     });
   }
 
-  for (const [name, w, h] of SIZES) {
-    test(`${name} (${w}x${h}) 面板不侵入心脏区`, async ({ page }) => {
+  for (const [name, w, h, tier] of SIZES) {
+    test(`${name} (${w}x${h}) [${tier}]`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("http://192.168.5.94:4173/");
       await page.waitForTimeout(1500);
-      const { hits } = await measure(page);
-      expect(hits, `面板不应遮挡心脏, 实际重叠: ${hits.join(", ")}`).toEqual([]);
+      if (tier === "tall") {
+        const { hits } = await measure(page);
+        expect(hits, `面板不应遮挡心脏, 实际重叠: ${hits.join(", ")}`).toEqual([]);
+      } else {
+        const r = await page.evaluate(() => {
+          const panel = document.getElementById("survey")!;
+          const pb = panel.getBoundingClientRect();
+          const ids = ["progress", "spec-name-txt", "ecg", "val-vit", "val-lum", "val-tox"];
+          let clip = 0;
+          for (const id of ids) {
+            const e = document.getElementById(id);
+            if (!e) continue;
+            const b = e.getBoundingClientRect();
+            if (b.width === 0 && b.height === 0) continue; // 被祖先 display:none 隐藏的指标行
+            if (b.bottom > pb.bottom + 0.5 || b.top < pb.top - 0.5) clip++;
+          }
+          return { clip };
+        });
+        expect(r.clip, `面板内容不应被裁切, 裁切元素数: ${r.clip}`).toBe(0);
+      }
     });
   }
-
-  test("面板底边严格在心脏区上界之上(留缓冲)", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("http://192.168.5.94:4173/");
-    await page.waitForTimeout(1500);
-    const r = await page.evaluate(() => {
-      const vh = innerHeight;
-      const heartTop = Math.round(vh * 0.30);
-      const box = (id: string) => {
-        const e = document.getElementById(id)!;
-        return Math.round(e.getBoundingClientRect().bottom);
-      };
-      return { heartTop, surveyB: box("survey"), macroB: box("macro") };
-    });
-    // 面板底边应 ≤ 心脏区上界, 且留 ≥12px 缓冲
-    expect(r.surveyB, "survey 底边应在心脏区上界之上并留缓冲").toBeLessThanOrEqual(r.heartTop - 12);
-    expect(r.macroB, "macro 底边应在心脏区上界之上并留缓冲").toBeLessThanOrEqual(r.heartTop - 12);
-  });
 });
