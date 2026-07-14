@@ -2,6 +2,9 @@
 
 A sci-fi "field survey" scanner rendered entirely in the browser: a beating, photoreal human heart floating in a studio, scanned region-by-region with animated HUD overlays, a live ECG trace, a macro-optics tracking panel, and a synthesized heartbeat. No engine, no build step — one HTML file, Three.js, and the Web Audio API.
 
+### ▶ Live demo — **https://carolinacherry.github.io/cardia-survey/**
+*(click anywhere to enable sound)*
+
 ![demo](media/cardia-survey.gif)
 
 ▶ **Full clip with sound:** [`media/cardia-survey.mp4`](media/cardia-survey.mp4)
