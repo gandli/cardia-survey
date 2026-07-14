@@ -190,18 +190,18 @@
   @keyframes grain{
     0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-3%)}100%{transform:translate(0,0)}}
   @media (prefers-reduced-motion:reduce){#grain{animation:none}}
-
-  @media (max-width:820px), (max-height:560px){
-    /* 面板移到顶部两角, 避免遮挡屏幕中下部的 3D 心脏 */
-    #survey{left:12px;top:34px;bottom:auto;transform:none;width:168px;z-index:20;max-height:152px;overflow:hidden}
-    #macro{right:12px;top:34px;bottom:auto;transform:none;width:156px;z-index:20;max-height:152px;overflow:hidden}
-    #macro-window{width:120px;height:120px}
-    /* 移动端精简 HUD: 隐藏描述/位置行, 缩小间距, 保证面板不侵入心脏区 */
+  /* 移动布局触发: 手机竖屏(宽≤700) 或 横屏手机(高≤480). 其余宽屏走桌面原尺寸 */
+  @media (max-width:700px), (max-height:480px){
+    /* 面板移到顶部两角, 高度上限 = 心脏区上界(top:34)内, 既不全挡心脏也不裁切 */
+    #survey{left:12px;top:34px;bottom:auto;transform:none;width:168px;z-index:20;max-height:calc(28vh - 34px);overflow:hidden}
+    #macro{right:12px;top:34px;bottom:auto;transform:none;width:156px;z-index:20;max-height:calc(28vh - 34px);overflow:hidden}
+    #macro-window{width:120px;height:108px}
+    /* 移动端精简 HUD: 隐藏描述/位置行, 紧凑间距, 内容在 max-height 内完整显示 */
     #spec-desc{display:none}
     #survey .ft,#macro .ft{display:none}
-    #ecg{height:20px;margin:2px 0 6px}
-    #survey .meter,#macro .meter{margin:4px 0;font-size:8px}
-    #survey .bd,#macro .bd{padding:8px 10px 10px}
+    #ecg{height:18px;margin:2px 0 5px}
+    #survey .meter,#macro .meter{margin:3px 0;font-size:8px}
+    #survey .bd,#macro .bd{padding:7px 10px 9px}
     /* 顶部按钮移到底部居中工具栏, 触摸目标 ≥44px, 始终在面板之上 */
     #rec-btn,#replay-btn,#audio-btn{
       top:auto;bottom:14px;padding:13px 14px;font-size:10px;
@@ -218,23 +218,32 @@
     #complete{bottom:auto;top:46%;transform:translate(-50%,-50%);font-size:10px;letter-spacing:0.3em;width:auto;white-space:nowrap;z-index:40}
     #complete .sub{font-size:8px;letter-spacing:0.24em;margin-top:4px}
   }
-  @media (max-width:480px), (max-height:480px){
-    #survey{width:150px;top:34px;max-height:132px}
-    #macro{width:142px;top:34px;max-height:132px}
-    #macro-window{width:120px;height:126px}
+  @media (max-width:480px){
+    #survey{width:150px;top:34px;max-height:calc(28vh - 34px)}
+    #macro{width:142px;top:34px;max-height:calc(28vh - 34px)}
+    #macro-window{width:108px;height:96px}
     #rec-btn,#replay-btn,#audio-btn{padding:12px 10px;font-size:9px;bottom:12px;min-height:44px}
     #rec-btn{right:8px}
     #replay-btn{right:74px}
     #audio-btn{right:140px}
     #audio-hint{bottom:58px;right:140px;font-size:7px}
   }
-  /* 横屏/矮屏: 高度稀缺, 面板进一步压扁避免侵入心脏区 */
-  @media (max-height:620px){
-    #survey,#macro{top:10px;max-height:128px}
-    #macro-window{width:96px;height:96px}
-    #ecg{height:16px}
+  /* 矮竖屏(高 481-600, 如 320x568): 垂直空间不足以同时"完整显示+不挡心脏",
+     优先显示全(不裁切), 面板自然高度置于顶部, 允许轻微盖住心脏上缘 */
+  @media (max-height:600px) and (min-height:481px){
+    #survey,#macro{max-height:none}
   }
-</style>
+  /* 横屏手机(高≤480): 完整覆盖桌面定位, 隐藏指标行, 仅留进度/名称/ECG, 显示全不裁切 */
+  @media (max-height:480px){
+    #survey,#macro{top:10px;transform:none;bottom:auto;left:12px;right:auto;max-height:none}
+    #macro{right:12px;left:auto}
+    #macro-window{width:80px;height:76px}
+    #ecg{height:12px;margin:1px 0 3px}
+    #spec-name{font-size:10px;line-height:1.15}
+    #survey .meter,#macro .meter{display:none}
+    #survey .bd,#macro .bd{padding:5px 8px 7px}
+  }
+
 </head>
 <body>
 <div id="stage">
