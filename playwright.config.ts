@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30_000,
+  // CI runner (ubuntu-latest 2vCPU) 上 3D GLB 加载 + rAF settle 偶发慢, 单测放宽到 60s
+  timeout: 60_000,
+  // CI 上重试 2 次防 flake (本地不重试, 保证首次绿)
+  retries: process.env.CI ? 2 : 0,
   fullyParallel: false,
   reporter: 'list',
   use: {

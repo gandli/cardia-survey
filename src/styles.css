@@ -5,8 +5,8 @@
  */
 @theme {
   --color-ink: #d9ded6;
-  --color-ink-dim: #8d948b;
-  --color-accent: #a8e6c9;
+  --color-ink-dim: #a4aca2; /* impeccable P0-2: 4.2→4.7 AA 对比度提升 */
+  --color-accent: #8ac9d6; /* impeccable P0-2: mint → 载玻片 pale-cyan, 脱 SaaS 家族反射 */
   --color-warn: #e8b06a;
   --color-panel-bg: rgba(24, 26, 24, 0.88);
   --color-panel-line: rgba(255, 255, 255, 0.10);
@@ -248,11 +248,19 @@
   body.ready #audio-hint,
   body.ready .replay-btn,
   body.ready .rec-btn { opacity: 1; }
+  /* P1-2 artist-imprint 用独立 3s delay + 1.6s 淡入 (与主 UI 分离):
+     CodeRabbit Critical 修复 — inline opacity 已从 JSX 移除, 全权由此规则控制 */
+  #artist-imprint {
+    opacity: 0;
+    transition: opacity 1.6s ease-out 3s;
+  }
+  body.ready #artist-imprint { opacity: 1; }
 
   body.capturing .rec-btn,
   body.capturing .replay-btn,
   body.capturing .audio-btn,
-  body.capturing #audio-hint {
+  body.capturing #audio-hint,
+  body.capturing #artist-imprint {
     opacity: 0 !important;
     pointer-events: none;
   }

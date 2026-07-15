@@ -148,6 +148,8 @@ export class HeartEngine {
       const loading = this.el('loading'); if (loading) loading.style.opacity = '0';
       document.body.classList.add('ready');
       this._heartLoaded = heartLoaded; this._heartModel = heartModel;
+      // impeccable P1-1: 首访提示 (localStorage 记忆一次), reduced-motion 用户不弹
+      this._showInteractionHint();
     });
     this._getHeart = () => ({ heartLoaded, heartModel });
   }
@@ -469,6 +471,9 @@ export class HeartEngine {
     const ecgLine = this.elId('ecg-line'), ecgDot = this.elId('ecg-dot');
     const ecgHr = this.elId('ecg-hr'), miniHr = this.elId('mini-hr');
     const ECG_N = 116, ecgBuf = new Array(ECG_N).fill(0);
+    // impeccable P2-2: reduced-motion 用户冻结 ECG 波形为静态基线, 只更新 HR 数值
+    // (Sam persona 前庭反应契约, matchMedia 实时监听主题切换)
+    this._prefersReduce = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     let hrUpdateAt = 0, currentHr = 68;
     const renderECG = () => {
       let pts = '';
@@ -498,8 +503,13 @@ export class HeartEngine {
 
       const beatPhase = (t / BEAT_PERIOD) % 1;
       const contract = beatContract(beatPhase);
-      ecgBuf.push(ecgValue(beatPhase)); ecgBuf.shift();
-      renderECG();
+      // impeccable P2-2: reduced-motion 时冻结 ECG 波形 (静态基线), 只保留 HR 数字微抖
+      if (this._prefersReduce?.matches) {
+        if (ecgBuf.some((v) => v !== 0)) { ecgBuf.fill(0); renderECG(); }
+      } else {
+        ecgBuf.push(ecgValue(beatPhase)); ecgBuf.shift();
+        renderECG();
+      }
       updateHr(t);
       const beatIdx = Math.floor(t / BEAT_PERIOD);
       if (beatIdx !== this.lastBeatIdx) { this.lastBeatIdx = beatIdx; this.Audio.heartbeat(BEAT_PERIOD); }
@@ -605,6 +615,36 @@ export class HeartEngine {
     this._raf = requestAnimationFrame(render);
   }
 
+  // impeccable P1-1: 首访交互提示. 2.5s 淡入 → 8s 后淡出, 存储层记忆一次
+  // CodeRabbit Minor: 写入移至淡入时刻, 避免短停留用户 destroy 前未写入陷入循环
+  // Gemini Medium: localStorage 抛错 (隐私模式) 时回退到 sessionStorage
+  _showInteractionHint() {
+    const hint = this.el('interaction-hint');
+    if (!hint) return;
+    // reduced-motion 用户: 不弹装饰性覆盖层, aria-label 已经告诉屏幕阅读器操作
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    // 已看过则跳过 (localStorage 优先, 隐私模式回退 sessionStorage)
+    const readSeen = () => {
+      try { if (localStorage.getItem('cs.hintSeen') === '1') return true; } catch { /* noop */ }
+      try { if (sessionStorage.getItem('cs.hintSeen') === '1') return true; } catch { /* noop */ }
+      return false;
+    };
+    const writeSeen = () => {
+      try { localStorage.setItem('cs.hintSeen', '1'); return; } catch { /* noop */ }
+      try { sessionStorage.setItem('cs.hintSeen', '1'); } catch { /* noop */ }
+    };
+    if (readSeen()) return;
+    this._hintTimer1 = setTimeout(() => {
+      if (this.destroyed) return;
+      hint.style.opacity = '1';
+      writeSeen(); // 淡入即视为已看过 — 避免 destroy() 早清 timer 导致下次重弹
+      this._hintTimer2 = setTimeout(() => {
+        if (this.destroyed) return;
+        hint.style.opacity = '0';
+      }, 8000);
+    }, 2500);
+  }
+
   destroy() {
     this.destroyed = true;
     if (this._raf) cancelAnimationFrame(this._raf);
@@ -614,6 +654,9 @@ export class HeartEngine {
     try { this._stopRecording?.(); } catch { /* noop */ }
     // P0-3: 清 recAutoStop 定时器
     clearTimeout(this._recAutoStop);
+    // impeccable P1-1: 清交互提示 timer, 避免卸载后触发 setState
+    clearTimeout(this._hintTimer1);
+    clearTimeout(this._hintTimer2);
     // 清理 scramble 定时器
     if (this.scramblers) {
       for (const iv of this.scramblers.values()) clearInterval(iv);
