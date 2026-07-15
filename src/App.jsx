@@ -101,7 +101,13 @@ export default function App() {
           {/* 以下模块 <sm 不显示 (手机避免面板过高进入心脏区) */}
           <div id="spec-desc" className="hidden sm:block text-[8.5px] tracking-[0.14em] text-[var(--color-ink-dim)] my-1 min-h-[11px] text-pretty"></div>
 
-          <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] my-1.5 overflow-visible" aria-hidden="true">
+          {/* ECG 数值旁注 (仪表可信度: 无数值旁注则 ECG 看起来只是装饰线条) */}
+          <div className="hidden sm:flex items-center justify-between text-[8.5px] tracking-[0.16em] text-[var(--color-ink-dim)] tabular-nums mt-2 mb-1">
+            <span>♥ <span id="ecg-hr" className="text-[#f0f3ee] font-medium">72</span> bpm</span>
+            <span>lead II</span>
+            <span>10mm/mV</span>
+          </div>
+          <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] mb-1.5 overflow-visible" aria-hidden="true">
             <polyline id="ecg-line" fill="none" stroke="#a8e6c9" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
             <circle id="ecg-dot" r="1.7" fill="#a8e6c9" />
           </svg>
@@ -155,6 +161,8 @@ export default function App() {
           <div id="macro-window" className="relative outline outline-1 outline-white/5 flex-1" style={{ aspectRatio: '212/224' }}>
             <span className="corner tl"></span><span className="corner tr"></span>
             <span className="corner bl"></span><span className="corner br"></span>
+            <span className="tick-top" aria-hidden="true"></span>
+            <span className="tick-right" aria-hidden="true"></span>
             <div id="macro-cross"></div>
             <div id="macro-flash"></div>
           </div>
@@ -171,7 +179,7 @@ export default function App() {
       <div
         id="brand"
         aria-hidden="true"
-        className="fixed z-30 top-[22vh] left-4 sm:top-5 sm:left-6 xl:top-8 xl:left-10 text-[9px] sm:text-[10px] xl:text-[clamp(11px,0.75vw,15px)] tracking-[0.24em] sm:tracking-[0.3em] text-[rgba(62,66,76,0.85)] whitespace-nowrap"
+        className="fixed z-30 top-[22vh] left-4 sm:top-5 sm:left-6 xl:top-8 xl:left-10 text-[11px] sm:text-[12px] xl:text-[clamp(14px,0.85vw,18px)] tracking-[0.32em] font-medium text-[#22262e] whitespace-nowrap"
       >
         ◦ 心脏检查 · 心研-01
       </div>

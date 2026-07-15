@@ -444,12 +444,22 @@ export class HeartEngine {
     const beatContract = (p) => Math.min(1, g1(p, 0.12, 0.05) + 0.42 * g1(p, 0.30, 0.06));
     const ecgValue = (p) => g1(p, 0.06, 0.020) * 0.16 - g1(p, 0.115, 0.007) * 0.12 + g1(p, 0.15, 0.007) * 1.0 - g1(p, 0.185, 0.010) * 0.30 + g1(p, 0.34, 0.05) * 0.24;
     const ecgLine = this.elId('ecg-line'), ecgDot = this.elId('ecg-dot');
+    const ecgHr = this.elId('ecg-hr'), miniHr = this.elId('mini-hr');
     const ECG_N = 116, ecgBuf = new Array(ECG_N).fill(0);
+    let hrUpdateAt = 0, currentHr = 68;
     const renderECG = () => {
       let pts = '';
       for (let i = 0; i < ECG_N; i++) { const x = (i / (ECG_N - 1)) * 214; const y = 15 - ecgBuf[i] * 11; pts += x.toFixed(1) + ',' + y.toFixed(1) + ' '; }
       ecgLine.setAttribute('points', pts);
       ecgDot.setAttribute('cx', '214'); ecgDot.setAttribute('cy', (15 - ecgBuf[ECG_N - 1] * 11).toFixed(1));
+    };
+    const updateHr = (t) => {
+      // 每 1.6s 微抖动 HR (66-74), 保持医学可信
+      if (t - hrUpdateAt < 1.6) return;
+      hrUpdateAt = t;
+      currentHr = Math.round(68 + (Math.random() - 0.5) * 6);
+      if (ecgHr) ecgHr.textContent = String(currentHr);
+      if (miniHr) miniHr.textContent = String(currentHr);
     };
 
     let lastFrameS = null, rotAngle = 0, introStart = null, specShownAt = -99, ringStart = -99, lastBeatIdx = -1;
@@ -465,6 +475,7 @@ export class HeartEngine {
       const contract = beatContract(beatPhase);
       ecgBuf.push(ecgValue(beatPhase)); ecgBuf.shift();
       renderECG();
+      updateHr(t);
       const beatIdx = Math.floor(t / BEAT_PERIOD);
       if (beatIdx !== lastBeatIdx) { lastBeatIdx = beatIdx; this.Audio.heartbeat(BEAT_PERIOD); }
 
