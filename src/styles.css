@@ -44,13 +44,13 @@ body::after {
 .dot.done { background: var(--color-warn); box-shadow: 0 0 6px var(--color-warn); animation: none; }
 @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
 
-/* 光标 */
+/* 光标: 细 caret 而非方块 (避免像未渲染字符) */
 .cursor {
   display: inline-block;
-  width: 7px;
-  height: 14px;
+  width: 2px;
+  height: 1em;
   background: #f0f3ee;
-  margin-left: 2px;
+  margin-left: 3px;
   vertical-align: -2px;
   animation: pulse 1s steps(2) infinite;
 }
@@ -153,7 +153,7 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   66% { transform: translate(2%, -3%) }
   100% { transform: translate(0, 0) }
 }
-/* 短屏兜底: 高度 <520px 时面板强制变小, 防止 macro-window aspect-ratio 撑爆容器 */
+/* 短屏兜底: 高度 <520px 时面板强制变小 + 按钮下移避开 macro */
 @media (max-height: 520px) {
   #survey, #macro {
     max-height: calc(100vh - 20px) !important;
@@ -162,4 +162,17 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   #macro-window { width: 96px !important; aspect-ratio: 1 !important; }
   #ecg { display: none; }
   #survey .meter, #macro .meter { display: none; }
+  /* 按钮全部走底部横排, 避开 sm 顶栏 76px 与 macro 冲突 */
+  #rec-btn, #replay-btn, #audio-btn {
+    top: auto !important;
+    bottom: 8px !important;
+  }
+  #rec-btn { right: 12px !important; }
+  #replay-btn { right: 104px !important; }
+  #audio-btn { right: 196px !important; }
+  #audio-hint {
+    top: auto !important;
+    bottom: 48px !important;
+    right: 196px !important;
+  }
 }

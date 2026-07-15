@@ -22,7 +22,7 @@ async function assertNoHeartOcclusion(page: Page, panelIds: string[]) {
   const zone = zoneOf(vp.width, vp.height);
   for (const id of panelIds) {
     const box = await page.locator('#' + id).boundingBox();
-    if (!box) throw new Error(`panel #${id} missing`);
+    if (!box) continue; // display:none 时跳过
     const ix = Math.max(0, Math.min(box.x + box.width, zone.r) - Math.max(box.x, zone.l));
     const iy = Math.max(0, Math.min(box.y + box.height, zone.b) - Math.max(box.y, zone.t));
     const area = ix * iy;
@@ -110,8 +110,72 @@ test('F: macro 面板外层透明, 内部条带有底色', async ({ page }) => {
   expect(info.winBg, `winBg=${info.winBg}`).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
 });
 
-// G: macro 面板底边 ≤ viewport (已被 B 覆盖, 但 F 修复后可能引出新溢出)
+// H: 面板标题/元信息不折行 (证明面板宽度合理)
+test('H: 面板核心文本不折行', async ({ page }) => {
+  const info = await page.evaluate(() => {
+    const check = (sel: string) => {
+      const el = document.querySelector(sel) as HTMLElement | null;
+      if (!el) return null;
+      const cs = getComputedStyle(el);
+      const lineHeight = parseFloat(cs.lineHeight);
+      const height = el.getBoundingClientRect().height;
+      return { sel, height, lineHeight, ratio: height / lineHeight };
+    };
+    return [
+      check('#survey .hd-title'),
+      check('#macro .hd-title'),
+      check('#spec-count'),
+      check('#macro-mode'),
+      check('#scan-state'),
+    ];
+  });
+  for (const r of info) {
+    if (!r) continue;
+    expect(r.ratio, `${r.sel} h=${r.height} lh=${r.lineHeight} ratio=${r.ratio.toFixed(2)} (>1.6 说明折行)`).toBeLessThan(1.6);
+  }
+});
+
+// I: 4 个 HUD 按钮之间不重叠, 且与其它面板不重叠
+test('I: HUD 按钮互不重叠, 也不叠加 macro/survey 面板', async ({ page }) => {
+  const rects = await page.evaluate(() => {
+    const ids = ['rec-btn', 'replay-btn', 'audio-btn', 'audio-hint', 'macro', 'survey'];
+    return ids.map(id => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      // 排除入场未完成的
+      if (getComputedStyle(el).opacity === '0') return null;
+      return { id, l: r.left, t: r.top, r: r.right, b: r.bottom };
+    });
+  });
+  const boxes = rects.filter(Boolean) as { id: string; l: number; t: number; r: number; b: number }[];
+  const overlap = (a: typeof boxes[0], b: typeof boxes[0]) => {
+    const ix = Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l));
+    const iy = Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
+    return ix * iy;
+  };
+  const btns = boxes.filter(b => ['rec-btn', 'replay-btn', 'audio-btn'].includes(b.id));
+  // 按钮两两之间
+  for (let i = 0; i < btns.length; i++)
+    for (let j = i + 1; j < btns.length; j++)
+      expect(overlap(btns[i], btns[j]), `${btns[i].id} × ${btns[j].id}`).toBe(0);
+  // hint 不能和其它按钮重叠
+  const hint = boxes.find(b => b.id === 'audio-hint');
+  if (hint) for (const b of btns) expect(overlap(hint, b), `audio-hint × ${b.id}`).toBe(0);
+  // 按钮不能压在 macro/survey 面板上
+  const panels = boxes.filter(b => ['macro', 'survey'].includes(b.id));
+  for (const btn of btns)
+    for (const p of panels)
+      expect(overlap(btn, p), `${btn.id} × ${p.id}`).toBe(0);
+});
+
+// G: macro corner brackets 4 个齐全且未被裁切 (只在 macro 可见时校验)
 test('G: macro corner brackets 4 个齐全且未被裁切', async ({ page }) => {
+  const macroVisible = await page.evaluate(() => {
+    const el = document.getElementById('macro');
+    return !!el && getComputedStyle(el).display !== 'none';
+  });
+  if (!macroVisible) return; // 手机端 macro 隐藏, 跳过
   const boxes = await page.$$eval('#macro-window .corner', els =>
     els.map(el => {
       const r = el.getBoundingClientRect();
