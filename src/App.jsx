@@ -139,16 +139,17 @@ export default function App() {
       </div>
 
       {/* ============ 右面板 #macro (外层透明,让 canvas 心脏特写透出) ============
-          P2-1: 手机端不隐藏, 改为右下 88px 缩略窗保留双仪器张力 (作品性 vs 残缺版) */}
+          P2-1: 手机端从右下改为右上 88px 缩略 (避让底部按钮 rec/replay/audio),
+          sm+ 恢复右上完整仪器视图 */}
       <div
         id="macro"
         className={
           'fixed z-30 text-[var(--color-ink)] font-mono text-[10px] xl:text-[11px] tracking-[0.08em] ' +
           'shadow-[0_18px_50px_rgba(40,36,30,0.25)] ' +
-          // 手机端: 右下角 88px 缩略, 让开左下品牌与底部按钮
-          'right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] w-[88px] ' +
+          // 手机端: 右上角 88px 缩略 (在 #survey 右侧, 底部按钮之上; 与 audio-btn 有 12px 留白)
+          'right-3 top-2 w-[88px] ' +
           // sm+ 恢复完整右上仪器视图
-          'sm:right-4 sm:top-10 sm:bottom-auto sm:w-[22vw] sm:max-w-[210px] ' +
+          'sm:right-4 sm:top-10 sm:w-[22vw] sm:max-w-[210px] ' +
           'md:right-6 md:top-1/2 md:-translate-y-1/2 md:w-[200px] md:max-w-none ' +
           'lg:right-[clamp(12px,4vw,80px)] lg:w-[260px] xl:w-[clamp(320px,20vw,520px)] ' +
           'sm:max-h-[32vh] md:max-h-[90vh]'
