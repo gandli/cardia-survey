@@ -91,3 +91,38 @@ test('E: 心脏 canvas 占满视口且渲染', async ({ page }) => {
   expect(box!.width).toBeGreaterThanOrEqual(vp.width - 2);
   expect(box!.height).toBeGreaterThanOrEqual(vp.height - 2);
 });
+
+// F: macro wrapper 必须透明 (原版契约: 只有 hd/ft/strip/side 有底色, wrapper 透明才能透出 canvas 心脏特写)
+test('F: macro 面板外层透明, 内部条带有底色', async ({ page }) => {
+  const info = await page.evaluate(() => {
+    const macro = document.querySelector('#macro') as HTMLElement;
+    const win = document.querySelector('#macro-window') as HTMLElement;
+    const strip = document.querySelector('#macro > div:nth-of-type(2)') as HTMLElement;
+    const s = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
+    return {
+      macroBg: s(macro),
+      winBg: s(win),
+      stripBg: strip ? s(strip) : null,
+    };
+  });
+  // 完全透明 (rgba 第四位 =0) — 允许 rgb(0,0,0,0) / rgba(0,0,0,0) / transparent
+  expect(info.macroBg, `macroBg=${info.macroBg}`).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
+  expect(info.winBg, `winBg=${info.winBg}`).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
+});
+
+// G: macro 面板底边 ≤ viewport (已被 B 覆盖, 但 F 修复后可能引出新溢出)
+test('G: macro corner brackets 4 个齐全且未被裁切', async ({ page }) => {
+  const boxes = await page.$$eval('#macro-window .corner', els =>
+    els.map(el => {
+      const r = el.getBoundingClientRect();
+      return { l: r.left, t: r.top, r: r.right, b: r.bottom };
+    })
+  );
+  expect(boxes.length, 'macro window 需 4 个 .corner').toBe(4);
+  // 4 个角必须都在视口内 (>=-2, <= vp+2 兜底浮点)
+  const vp = page.viewportSize()!;
+  for (const b of boxes) {
+    expect(b.t, `corner top ${b.t}`).toBeGreaterThanOrEqual(-2);
+    expect(b.b, `corner bottom ${b.b} > vp ${vp.height}`).toBeLessThanOrEqual(vp.height + 2);
+  }
+});

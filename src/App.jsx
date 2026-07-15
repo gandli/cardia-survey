@@ -122,11 +122,13 @@ export default function App() {
         </div>
       </div>
 
-      {/* 右面板: 显微观测 */}
+      {/* 右面板: 显微观测 — 外层透明, 只 hd/ft/strip/side 有底色, 让 Three.js scissor 心脏特写透出 */}
       <div
         id="macro"
         className={
-          panelBase +
+          // 注意: 不复用 panelBase(有 bg + border), 只留定位/字体/层级
+          'fixed z-30 text-[var(--color-ink)] font-mono text-[10px] tracking-[0.08em] ' +
+          'shadow-[0_18px_50px_rgba(40,36,30,0.25)] ' +
           ' right-3 top-9 ' +
           'sm:right-4 sm:top-10 ' +
           'md:right-6 md:top-1/2 md:-translate-y-1/2 ' +
@@ -137,13 +139,13 @@ export default function App() {
           'max-h-[14vh] sm:max-h-[32vh] md:max-h-none'
         }
       >
-        <div className={hdCls}>
+        <div className={hdCls + ' border border-[var(--color-panel-line)] bg-[var(--color-panel-bg)]'}>
           <span className="flex items-center gap-1.5"><span className="dot"></span> 显微观测</span>
           <span id="macro-mode">跟踪中</span>
         </div>
-        <div className="h-[10px] bg-[var(--color-panel-bg)]" />
+        <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         <div className="flex">
-          <div className="flex-1 bg-[var(--color-panel-bg)]" />
+          <div className="flex-1 bg-[var(--color-panel-bg)] border-l border-[var(--color-panel-line)]" />
           <div
             id="macro-window"
             className="relative outline outline-1 outline-white/5"
@@ -154,10 +156,10 @@ export default function App() {
             <div id="macro-cross"></div>
             <div id="macro-flash"></div>
           </div>
-          <div className="flex-1 bg-[var(--color-panel-bg)]" />
+          <div className="flex-1 bg-[var(--color-panel-bg)] border-r border-[var(--color-panel-line)]" />
         </div>
-        <div className="h-[8px] bg-[var(--color-panel-bg)]" />
-        <div className="hidden sm:flex justify-between px-3 pb-2.5 pt-0.5 text-[8.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums">
+        <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
+        <div className="hidden sm:flex justify-between px-3 pb-2.5 pt-0.5 text-[8.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
           <span id="mag-txt">放大 2.24×</span>
           <span id="sp-txt">SP-01</span>
         </div>
