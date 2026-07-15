@@ -184,22 +184,24 @@ export default function App() {
         </div>
       </div>
 
-      {/* 品牌铭文 (作者签名): 与 #survey.hd-title '心脏检查' 语汇分离, 移至右下作品落款位 */}
+      {/* 品牌铭文 (作者签名): 与 #survey.hd-title '心脏检查' 语汇分离, 移至右下作品落款位.
+          手机端提到底部按钮上方 128px, 与按钮明确分层 (视觉不撞) */}
       <div
         id="brand"
         aria-hidden="true"
-        className="fixed z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] left-4 sm:bottom-4 sm:left-6 xl:bottom-6 xl:left-10 text-[10px] xl:text-[11px] tracking-[0.4em] font-medium text-[rgba(34,38,46,0.72)] whitespace-nowrap"
+        className="fixed z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+128px)] left-4 sm:bottom-4 sm:left-6 xl:bottom-6 xl:left-10 text-[10px] xl:text-[11px] tracking-[0.4em] font-medium text-[rgba(34,38,46,0.72)] whitespace-nowrap"
       >
         CARDIA · 心研-01
       </div>
 
       {/* P1-2 作者铭文 (POV 落地): 极小极慢淡入的作品说明, 让首访 5s 内区分艺术站 vs 医学产品.
           初始不可见 + 3s delay + 1.6s 淡入 由 styles.css 的 @layer components 单独声明,
-          Gemini/CodeRabbit Critical: 禁用 inline opacity, 否则会压掉 CSS 淡入规则 */}
+          Gemini/CodeRabbit Critical: 禁用 inline opacity, 否则会压掉 CSS 淡入规则.
+          手机端隐藏: 底部条已被 3 按钮占满, 铭文会撞按钮 (实测 y 重叠) */}
       <div
         id="artist-imprint"
         aria-hidden="true"
-        className="fixed z-20 left-1/2 -translate-x-1/2 bottom-[4%] text-[9px] tracking-[0.4em] whitespace-nowrap"
+        className="hidden sm:block fixed z-20 left-1/2 -translate-x-1/2 bottom-[4%] text-[9px] tracking-[0.4em] whitespace-nowrap"
         style={{ color: 'rgba(52,54,64,0.45)' }}
       >
         标本 · 心研-01 · 2026 · 影像装置
@@ -251,11 +253,12 @@ export default function App() {
         影像校准中…
       </div>
 
-      {/* P1-1 交互提示: 首次访问 body.ready 后 2.5s 淡入, 10s 后淡出, localStorage 只显示一次 */}
+      {/* P1-1 交互提示: 首次访问 body.ready 后 2.5s 淡入, 10s 后淡出, localStorage 只显示一次.
+          位置在心脏下方且高于 brand+底部按钮 (手机 bottom≈22% 避让 brand@bottom-128) */}
       <div
         id="interaction-hint"
         role="note"
-        className="fixed z-30 left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+16%)] text-[10px] tracking-[0.32em] font-mono whitespace-nowrap pointer-events-none"
+        className="fixed z-30 left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+22%)] sm:bottom-[16%] text-[10px] tracking-[0.32em] font-mono whitespace-nowrap pointer-events-none"
         style={{ color: 'rgba(34,38,46,0.75)', opacity: 0, transition: 'opacity 1.2s ease-out' }}
       >
         拖拽 · 点击标记 · 触发扫描
