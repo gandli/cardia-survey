@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ============ 设计 token: 颜色 / 字体 / 动画 ============
+ * 全部走 Tailwind v4 @theme, 前面 utility 用的 var(--color-*) 自动可用.
+ */
 @theme {
   --color-ink: #d9ded6;
   --color-ink-dim: #8d948b;
@@ -9,54 +12,87 @@
   --color-panel-line: rgba(255, 255, 255, 0.10);
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-serif: "Noto Serif SC", "Songti SC", "STSong", serif;
+
+  /* keyframes + animate-*: Tailwind v4 会同时挂 utility 与自定义命名动画 */
+  --animate-heartbeat: pulse 1.6s infinite;
+  --animate-cursor: pulse 1s steps(2) infinite;
+  --animate-recpulse: recpulse 1.1s ease-in-out infinite;
+  --animate-grain: grain 0.7s steps(3) infinite;
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1 }
+    50% { opacity: 0.35 }
+  }
+  @keyframes recpulse {
+    0%, 100% { opacity: 1 }
+    50% { opacity: 0.5 }
+  }
+  @keyframes grain {
+    0% { transform: translate(0, 0) }
+    33% { transform: translate(-3%, 2%) }
+    66% { transform: translate(2%, -3%) }
+    100% { transform: translate(0, 0) }
+  }
 }
 
-/* ============ 基础 ============ */
-html, body { height: 100dvh; overflow: hidden; }
-body {
-  font-family: var(--font-serif);
-  background: radial-gradient(135% 105% at 68% 26%, #edeef1 0%, #dbdde2 44%, #c4c6cd 78%, #b3b5be 100%);
-  color: var(--color-ink);
-  user-select: none;
-  -webkit-user-select: none;
+/* ============ 全局基础 ============
+ * html / body 需要固定视高 + 手感, 不适合每次都在 JSX 上加 class, 挂 base 层.
+ */
+@layer base {
+  html, body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body {
+    font-family: var(--font-serif);
+    background: radial-gradient(135% 105% at 68% 26%, #edeef1 0%, #dbdde2 44%, #c4c6cd 78%, #b3b5be 100%);
+    color: var(--color-ink);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(85% 60% at 46% 116%, rgba(70, 73, 84, 0.30), transparent 60%);
+  }
 }
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(85% 60% at 46% 116%, rgba(70, 73, 84, 0.30), transparent 60%);
-}
 
-/* ============ 心脏区遮罩 (contract: 面板绝不进入 x[32%,68%] y[20%,88%]) ============ */
+/* ============ 状态变体: body.ready / body.capturing / .dot.done / .meter.hot ============
+ * Tailwind v4 允许自定义 variant, 可在 JSX 或 @utility 内用 `body-ready:` / `capturing:` 等前缀命中.
+ */
+@custom-variant body-ready (&:where(body.ready *));
+@custom-variant capturing (&:where(body.capturing *));
 
-/* ============ 面板通用样式 (由 Tailwind class 完成布局, 这里补 SVG 里放不了的行为) ============ */
+/* ============ 命名工具类 (@utility) — 全部等价原样式, JSX 现有 class 名不变 ============ */
 
-/* 心跳点 */
-.dot {
+@utility dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: var(--color-accent);
   box-shadow: 0 0 6px var(--color-accent);
-  animation: pulse 1.6s infinite;
+  animation: var(--animate-heartbeat);
+  &.done {
+    background: var(--color-warn);
+    box-shadow: 0 0 6px var(--color-warn);
+    animation: none;
+  }
 }
-.dot.done { background: var(--color-warn); box-shadow: 0 0 6px var(--color-warn); animation: none; }
-@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
 
-/* 光标: 细 caret 而非方块 (避免像未渲染字符) */
-.cursor {
+@utility cursor {
   display: inline-block;
   width: 2px;
   height: 1em;
   background: #f0f3ee;
   margin-left: 3px;
   vertical-align: -2px;
-  animation: pulse 1s steps(2) infinite;
+  animation: var(--animate-cursor);
 }
 
-/* meter 网格布局 (标签列 4ch = 4 汉字宽, 数值列固定, 保证对齐; 原版精确复刻) */
-.meter {
+/* meter: 标签列 4ch, 数值列固定, 保证对齐 */
+@utility meter {
   display: grid;
   grid-template-columns: 4ch 1fr 4ch;
   gap: 10px;
@@ -65,35 +101,54 @@ body::after {
   font-size: 8.5px;
   color: var(--color-ink-dim);
   letter-spacing: 0.18em;
+  & .track {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.12);
+    position: relative;
+  }
+  & .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: #e6ebe2;
+    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  &.hot .fill { background: var(--color-warn); }
+  & .val {
+    text-align: right;
+    color: var(--color-ink);
+    font-variant-numeric: tabular-nums;
+  }
 }
-.meter .track { height: 2px; background: rgba(255, 255, 255, 0.12); position: relative; }
-.meter .fill {
+
+/* progress dots (JSX 里在 #progress 容器下的 <i>) */
+@utility progress-dot {
+  transition: background 0.4s;
+  &.done { background: rgba(217, 222, 214, 0.45); }
+  &.active {
+    background: var(--color-accent);
+    box-shadow: 0 0 5px var(--color-accent);
+  }
+}
+
+@utility ecg-line-glow {
+  filter: drop-shadow(0 0 2px rgba(168, 230, 201, 0.5));
+}
+
+/* macro corner brackets: 4 个方位角 */
+@utility corner {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: #e6ebe2;
-  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(240, 244, 238, 0.85);
+  &.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  &.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+  &.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+  &.br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
 }
-.meter.hot .fill { background: var(--color-warn); }
-.meter .val { text-align: right; color: var(--color-ink); font-variant-numeric: tabular-nums; }
 
-/* progress 段 */
-#progress i { transition: background 0.4s; }
-#progress i.done { background: rgba(217, 222, 214, 0.45); }
-#progress i.active { background: var(--color-accent); box-shadow: 0 0 5px var(--color-accent); }
-
-/* ECG */
-#ecg-line { filter: drop-shadow(0 0 2px rgba(168, 230, 201, 0.5)); }
-
-/* macro corner brackets */
-.corner { position: absolute; width: 14px; height: 14px; border: 1px solid rgba(240, 244, 238, 0.85); }
-.corner.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
-.corner.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
-.corner.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
-.corner.br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
-
-/* macro 刻度尺: 上/右两条 4 tick 刻度, 强化"显微目镜"仪表感 */
-#macro-window .tick-top {
+/* macro 刻度尺: 上/右两条 4 tick 刻度 */
+@utility tick-top {
   position: absolute;
   top: -1px;
   left: 22%;
@@ -109,7 +164,8 @@ body::after {
   background-size: 100% 100%;
   pointer-events: none;
 }
-#macro-window .tick-right {
+
+@utility tick-right {
   position: absolute;
   right: -1px;
   top: 22%;
@@ -125,7 +181,7 @@ body::after {
   pointer-events: none;
 }
 
-#macro-cross {
+@utility macro-cross {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -133,41 +189,34 @@ body::after {
   height: 9px;
   transform: translate(-50%, -50%);
   opacity: 0.8;
+  &::before, &::after {
+    content: "";
+    position: absolute;
+    background: rgba(240, 244, 238, 0.9);
+  }
+  &::before { left: 4px; top: 0; width: 1px; height: 9px; }
+  &::after  { left: 0; top: 4px; width: 9px; height: 1px; }
 }
-#macro-cross::before, #macro-cross::after {
-  content: "";
+
+@utility macro-flash {
   position: absolute;
-  background: rgba(240, 244, 238, 0.9);
-}
-#macro-cross::before { left: 4px; top: 0; width: 1px; height: 9px; }
-#macro-cross::after { left: 0; top: 4px; width: 9px; height: 1px; }
-#macro-flash { position: absolute; inset: 0; background: #eef2ea; opacity: 0; pointer-events: none; }
-
-/* 录制脉冲 */
-@keyframes recpulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.5 } }
-.rec-btn.recording {
-  color: #c0392b;
-  border-color: #c0392b;
-  animation: recpulse 1.1s ease-in-out infinite;
-}
-
-/* 录制中隐藏 dev chrome */
-body.capturing .rec-btn,
-body.capturing .replay-btn,
-body.capturing .audio-btn,
-body.capturing #audio-hint { opacity: 0 !important; pointer-events: none; }
-
-/* 入场动画: 用 opacity 淡入 + CSS 变量偏移, 避开 translate 属性以让 Tailwind 的 -translate-y-1/2 正常工作 */
-#survey, #macro, #brand,
-.audio-btn, #audio-hint, .replay-btn, .rec-btn {
+  inset: 0;
+  background: #eef2ea;
   opacity: 0;
-  transition: opacity 0.9s ease-out 0.15s;
+  pointer-events: none;
 }
-body.ready #survey, body.ready #macro, body.ready #brand,
-body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.ready .rec-btn { opacity: 1; }
 
-/* film grain (装饰性噪声, 全屏 4× 面积, 用 will-change 提升到 GPU 层避免每帧 paint) */
-#grain {
+/* 录制按钮 recording 态: 红边 + 循环闪 (前庭反应用户下方 reduced-motion 关) */
+@utility rec-btn {
+  &.recording {
+    color: #c0392b;
+    border-color: #c0392b;
+    animation: var(--animate-recpulse);
+  }
+}
+
+/* film grain: 全屏 4× 面积, will-change 提升到 GPU 层 */
+@utility grain {
   position: fixed;
   inset: -50%;
   width: 200%;
@@ -177,51 +226,76 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   opacity: 0.05;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain 0.7s steps(3) infinite;
+  animation: var(--animate-grain);
   will-change: transform;
   contain: strict;
 }
-@keyframes grain {
-  0% { transform: translate(0, 0) }
-  33% { transform: translate(-3%, 2%) }
-  66% { transform: translate(2%, -3%) }
-  100% { transform: translate(0, 0) }
-}
-/* 短屏兜底: 高度 <520px 时面板强制变小 + 按钮下移避开 macro */
-@media (max-height: 520px) {
-  #survey, #macro {
-    max-height: calc(100vh - 20px) !important;
-    top: 8px !important;
-    /* landscape 短屏走 sm/md 布局时 tailwind 的 -translate-y-1/2 仍生效, 强制清零 */
-    translate: 0 0 !important;
-    transform: none !important;
+
+/* ============ 入场淡入 / 录制隐藏 dev chrome (跨元素状态选择器)============
+ * 这类"父容器 class 决定子孙元素样式"的语义超出 utility class 语法,
+ * Tailwind v4 建议用 @layer components 或 @custom-variant. 这里用 components 层保持声明式.
+ */
+@layer components {
+  #survey, #macro, #brand,
+  .audio-btn, #audio-hint, .replay-btn, .rec-btn {
+    opacity: 0;
+    transition: opacity 0.9s ease-out 0.15s;
   }
-  #macro-window { width: 96px !important; aspect-ratio: 1 !important; }
-  #ecg { display: none !important; }
-  #survey .meter, #macro .meter { display: none !important; }
-  /* 关键数据不消失: 用 mini chip 保留 ECG/meter 数值 */
-  #mini-strip { display: flex !important; }
-  /* 按钮全部走底部横排, 避开 sm 顶栏 76px 与 macro 冲突 */
-  #rec-btn, #replay-btn, #audio-btn {
-    top: auto !important;
-    bottom: 8px !important;
-  }
-  #rec-btn { right: 12px !important; }
-  #replay-btn { right: 116px !important; }
-  #audio-btn { right: 220px !important; }
-  #audio-hint {
-    top: auto !important;
-    bottom: 56px !important;
-    right: 220px !important;
+  body.ready #survey,
+  body.ready #macro,
+  body.ready #brand,
+  body.ready .audio-btn,
+  body.ready #audio-hint,
+  body.ready .replay-btn,
+  body.ready .rec-btn { opacity: 1; }
+
+  body.capturing .rec-btn,
+  body.capturing .replay-btn,
+  body.capturing .audio-btn,
+  body.capturing #audio-hint {
+    opacity: 0 !important;
+    pointer-events: none;
   }
 }
 
-/* 尊重系统 reduced-motion: 停止所有装饰性循环动画 (3D 心脏交互不受影响) */
-@media (prefers-reduced-motion: reduce) {
-  #grain { animation: none !important; }
-  .dot, .cursor { animation: none !important; }
-  .rec-btn::before { animation: none !important; }
-  #survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn {
-    transition: opacity 0.15s ease-out !important;
+/* ============ 短屏兜底 (height<520px) ============
+ * arbitrary media, Tailwind variant 无法覆盖 !important 强制清零 -translate 一类 tailwind 变量, 保留原生.
+ */
+@layer utilities {
+  @media (max-height: 520px) {
+    #survey, #macro {
+      max-height: calc(100vh - 20px) !important;
+      top: 8px !important;
+      translate: 0 0 !important;
+      transform: none !important;
+    }
+    #macro-window { width: 96px !important; aspect-ratio: 1 !important; }
+    #ecg { display: none !important; }
+    #survey .meter, #macro .meter { display: none !important; }
+    #mini-strip { display: flex !important; }
+    #rec-btn, #replay-btn, #audio-btn {
+      top: auto !important;
+      bottom: 8px !important;
+    }
+    #rec-btn { right: 12px !important; }
+    #replay-btn { right: 116px !important; }
+    #audio-btn { right: 220px !important; }
+    #audio-hint {
+      top: auto !important;
+      bottom: 56px !important;
+      right: 220px !important;
+    }
+  }
+
+  /* 系统 reduced-motion: 停所有循环装饰动画 (3D 心脏交互不受影响) */
+  @media (prefers-reduced-motion: reduce) {
+    #grain { animation: none !important; }
+    .dot, .cursor { animation: none !important; }
+    .rec-btn::before { animation: none !important; }
+    /* P1-2: 录制按钮闪烁属循环装饰, 前庭反应用户须关 */
+    .rec-btn.recording { animation: none !important; }
+    #survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn {
+      transition: opacity 0.15s ease-out !important;
+    }
   }
 }

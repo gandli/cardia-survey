@@ -124,6 +124,9 @@ export class HeartEngine {
       const size = heartBox.getSize(new THREE.Vector3());
       const c = heartBox.getCenter(new THREE.Vector3());
 
+      // 锚点计算结果放到实例 Map, 不污染模块级 SPECIMENS
+      // (P0-1: StrictMode 双挂载 / HMR 时前实例 destroy 与新实例 loader 回调 race 会写坏同一对象)
+      this.anchors = new Map();
       const ray = new THREE.Raycaster();
       for (const s of SPECIMENS) {
         const tgt = new THREE.Vector3(
@@ -136,9 +139,10 @@ export class HeartEngine {
         const worldNrm = hits.length && hits[0].face
           ? hits[0].face.normal.clone().transformDirection(hits[0].object.matrixWorld).normalize()
           : dir.clone();
-        s.anchorLocal = model.worldToLocal(worldHit.clone());
-        s.normalLocal = model.worldToLocal(worldHit.clone().addScaledVector(worldNrm, 1))
+        const anchorLocal = model.worldToLocal(worldHit.clone());
+        const normalLocal = model.worldToLocal(worldHit.clone().addScaledVector(worldNrm, 1))
           .sub(model.worldToLocal(worldHit.clone())).normalize();
+        this.anchors.set(s.name, { anchorLocal, normalLocal });
       }
       heartLoaded = true;
       const loading = this.el('loading'); if (loading) loading.style.opacity = '0';
@@ -238,7 +242,7 @@ export class HeartEngine {
 
   _initRecorder() {
     const recBtn = this.el('rec-btn');
-    let mediaRec = null, recChunks = [], recDisplay = null, recAutoStop = null;
+    let mediaRec = null, recChunks = [], recDisplay = null;
     let audioArmed = false;
     const setAudio = (on) => {
       const audioBtn = this.el('audio-btn');
@@ -262,6 +266,12 @@ export class HeartEngine {
         recDisplay = await navigator.mediaDevices.getDisplayMedia({
           video: { frameRate: 60, cursor: 'never' }, audio: false, preferCurrentTab: true,
         });
+        // Gemini High: getDisplayMedia 弹框期间组件可能已卸载 → 立即停 tracks 并 return
+        if (this.destroyed) {
+          recDisplay.getTracks().forEach((t) => t.stop());
+          recDisplay = null;
+          return;
+        }
         if (!this.Audio.enabled) { audioArmed = true; setAudio(this.Audio.toggle()); }
         const audioStream = this.Audio.captureStream();
         const mixed = new MediaStream([...recDisplay.getVideoTracks(), ...audioStream.getAudioTracks()]);
@@ -276,17 +286,21 @@ export class HeartEngine {
           setTimeout(() => URL.revokeObjectURL(url), 4000);
           recDisplay.getTracks().forEach((t) => t.stop());
           document.body.classList.remove('capturing');
-          clearTimeout(recAutoStop);
+          clearTimeout(this._recAutoStop);
           recBtn.classList.remove('recording'); recBtn.textContent = '● 录制';
         };
         recDisplay.getVideoTracks()[0].addEventListener('ended', stopRecording);
         mediaRec.start();
         recBtn.classList.add('recording'); recBtn.textContent = '■ 停止';
         document.body.classList.add('capturing');
-        recAutoStop = setTimeout(stopRecording, 33000);
+        // P0-3: 提到 this.* 让 destroy 能清; 33s 自动停
+        this._recAutoStop = setTimeout(stopRecording, 33000);
         this._restartSurvey();
       } catch (err) {
         console.warn('recording cancelled:', err);
+        // P1-3: catch 兜底停 recDisplay tracks, 避免屏幕录制指示灯持续亮
+        recDisplay?.getTracks().forEach((t) => t.stop());
+        recDisplay = null;
         document.body.classList.remove('capturing');
         recBtn.classList.remove('recording'); recBtn.textContent = '● 录制';
       }
@@ -536,9 +550,10 @@ export class HeartEngine {
       }
 
       const s = SPECIMENS[Math.max(0, Math.min(this.specIdx, SPECIMENS.length - 1))];
-      if (this.phase === 'scan' && this.specIdx >= 0 && s.anchorLocal) {
-        worldAnchor.copy(s.anchorLocal); heartModel.localToWorld(worldAnchor);
-        worldNormal.copy(s.normalLocal).transformDirection(heartModel.matrixWorld).normalize();
+      const anchor = this.anchors?.get(s.name);
+      if (this.phase === 'scan' && this.specIdx >= 0 && anchor) {
+        worldAnchor.copy(anchor.anchorLocal); heartModel.localToWorld(worldAnchor);
+        worldNormal.copy(anchor.normalLocal).transformDirection(heartModel.matrixWorld).normalize();
         tmpV.copy(worldAnchor).project(this.camera);
         const sx = (tmpV.x * 0.5 + 0.5) * innerWidth;
         const sy = (-tmpV.y * 0.5 + 0.5) * innerHeight;
@@ -597,6 +612,8 @@ export class HeartEngine {
     if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
     // 停止录制 + 清理定时器 (Gemini P1)
     try { this._stopRecording?.(); } catch { /* noop */ }
+    // P0-3: 清 recAutoStop 定时器
+    clearTimeout(this._recAutoStop);
     // 清理 scramble 定时器
     if (this.scramblers) {
       for (const iv of this.scramblers.values()) clearInterval(iv);
