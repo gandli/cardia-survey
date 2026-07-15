@@ -70,11 +70,11 @@ export default function App() {
           'sm:right-auto sm:left-4 sm:top-10 ' +
           'md:left-6 md:top-1/2 md:-translate-y-1/2 md:right-auto ' +
           'lg:left-[clamp(12px,5vw,90px)] ' +
-          // 宽度
+          // 宽度 (max-w 只在 sm, md+ 用 w 直接控制)
           'sm:w-[24vw] sm:max-w-[220px] ' +
-          'md:w-[260px] lg:w-[340px] xl:w-[clamp(380px,26vw,720px)] ' +
-          // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh)
-          'max-h-[15vh] sm:max-h-[32vh] md:max-h-none'
+          'md:w-[210px] md:max-w-none lg:w-[280px] xl:w-[clamp(340px,22vw,560px)] ' +
+          // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh; md+ 上限 80vh 防超屏)
+          'max-h-[15vh] sm:max-h-[32vh] md:max-h-[80vh] md:overflow-y-auto'
         }
       >
         <div className={hdCls}>
@@ -130,8 +130,8 @@ export default function App() {
           'md:right-6 md:top-1/2 md:-translate-y-1/2 ' +
           'lg:right-[clamp(12px,4vw,80px)] ' +
           'sm:w-[22vw] sm:max-w-[210px] ' +
-          'md:w-[240px] lg:w-[320px] xl:w-[clamp(360px,24vw,680px)] ' +
-          'sm:max-h-[32vh] md:max-h-none'
+          'md:w-[200px] md:max-w-none lg:w-[260px] xl:w-[clamp(320px,20vw,520px)] ' +
+          'sm:max-h-[32vh] md:max-h-[80vh]'
         }
       >
         <div className={hdCls}>
@@ -139,15 +139,13 @@ export default function App() {
           <span id="macro-mode">跟踪中</span>
         </div>
         <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
-        <div className="flex">
-          <div className="flex-1 bg-[var(--color-panel-bg)] border-l border-[var(--color-panel-line)]" />
-          <div id="macro-window" className="relative outline outline-1 outline-white/5" style={{ width: 'min(100%,clamp(220px,22vw,540px))', aspectRatio: '212/224' }}>
+        <div className="flex px-2 sm:px-2.5 bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]">
+          <div id="macro-window" className="relative outline outline-1 outline-white/5 mx-auto w-full" style={{ aspectRatio: '212/224' }}>
             <span className="corner tl"></span><span className="corner tr"></span>
             <span className="corner bl"></span><span className="corner br"></span>
             <div id="macro-cross"></div>
             <div id="macro-flash"></div>
           </div>
-          <div className="flex-1 bg-[var(--color-panel-bg)] border-r border-[var(--color-panel-line)]" />
         </div>
         <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         <div className="flex justify-between px-3 pb-2.5 pt-0.5 text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
