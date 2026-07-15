@@ -41,8 +41,13 @@ export default function App() {
         style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(46,49,60,0.32), rgba(46,49,60,0) 70%)' }}
       />
 
-      {/* 心脏 3D 主视图 (装饰性 canvas, 语义在下方面板) */}
-      <canvas id="gl" className="absolute inset-0 w-full h-full block" role="img" aria-label="心脏 3D 交互模型" />
+      {/* 心脏 3D 主视图 (装饰性 canvas, 语义在下方面板) — P1-1 grab affordance */}
+      <canvas
+        id="gl"
+        className="absolute inset-0 w-full h-full block cursor-grab active:cursor-grabbing"
+        role="img"
+        aria-label="心脏 3D 交互模型 · 拖拽旋转 · 点击标记查看细节"
+      />
 
       <svg id="overlay-svg" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
         <defs>
@@ -108,8 +113,8 @@ export default function App() {
             <span>10mm/mV</span>
           </div>
           <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] mb-1.5 overflow-visible" aria-hidden="true">
-            <polyline id="ecg-line" fill="none" stroke="#a8e6c9" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
-            <circle id="ecg-dot" r="1.7" fill="#a8e6c9" />
+            <polyline id="ecg-line" fill="none" stroke="var(--color-accent)" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
+            <circle id="ecg-dot" r="1.7" fill="var(--color-accent)" />
           </svg>
 
           {/* 短屏兜底 chip: ECG/meter 无法展开时保留关键数值 (临床可信度) */}
@@ -133,27 +138,28 @@ export default function App() {
         </div>
       </div>
 
-      {/* ============ 右面板 #macro (外层透明,让 canvas 心脏特写透出) ============ */}
+      {/* ============ 右面板 #macro (外层透明,让 canvas 心脏特写透出) ============
+          P2-1: 手机端不隐藏, 改为右下 88px 缩略窗保留双仪器张力 (作品性 vs 残缺版) */}
       <div
         id="macro"
         className={
           'fixed z-30 text-[var(--color-ink)] font-mono text-[10px] xl:text-[11px] tracking-[0.08em] ' +
           'shadow-[0_18px_50px_rgba(40,36,30,0.25)] ' +
-          // 手机(<sm)完全隐藏, 主视图心脏已够看; 从 sm 起才出面板
-          'hidden sm:block ' +
-          'sm:right-4 sm:top-10 ' +
-          'md:right-6 md:top-1/2 md:-translate-y-1/2 ' +
-          'lg:right-[clamp(12px,4vw,80px)] ' +
-          'sm:w-[22vw] sm:max-w-[210px] ' +
-          'md:w-[200px] md:max-w-none lg:w-[260px] xl:w-[clamp(320px,20vw,520px)] ' +
+          // 手机端: 右下角 88px 缩略, 让开左下品牌与底部按钮
+          'right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] w-[88px] ' +
+          // sm+ 恢复完整右上仪器视图
+          'sm:right-4 sm:top-10 sm:bottom-auto sm:w-[22vw] sm:max-w-[210px] ' +
+          'md:right-6 md:top-1/2 md:-translate-y-1/2 md:w-[200px] md:max-w-none ' +
+          'lg:right-[clamp(12px,4vw,80px)] lg:w-[260px] xl:w-[clamp(320px,20vw,520px)] ' +
           'sm:max-h-[32vh] md:max-h-[90vh]'
         }
       >
-        <div className={hdCls}>
+        {/* 手机 88px 缩略只保留 macro-window 本体; sm+ 才显示 hd/底部信息栏 */}
+        <div className={hdCls + ' hidden sm:grid'}>
           <span className="hd-title flex items-center gap-1.5"><span className="dot" aria-hidden="true"></span> 显微观测</span>
           <span id="macro-mode">跟踪中</span>
         </div>
-        <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
+        <div className="hidden sm:block h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         {/* 显微图像层: 父容器必须透明, canvas scissor 渲染的心脏特写才能透出;
             左右内边距由 border 两侧的伪填充块承担, 不给父层加背景 */}
         <div className="relative flex">
@@ -168,20 +174,30 @@ export default function App() {
           </div>
           <div className="w-2 sm:w-2.5 bg-[var(--color-panel-bg)] border-r border-[var(--color-panel-line)]" aria-hidden="true" />
         </div>
-        <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
-        <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-3 py-2 leading-none min-h-[32px] xl:min-h-[36px] text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
+        <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)] hidden sm:block" />
+        <div className="hidden sm:grid grid-cols-[1fr_auto] items-center gap-2 px-3 py-2 leading-none min-h-[32px] xl:min-h-[36px] text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
           <span id="mag-txt">放大 2.24×</span>
           <span id="sp-txt">SP-01</span>
         </div>
       </div>
 
-      {/* 品牌 (装饰文字, 与页面 title 同义) */}
+      {/* 品牌铭文 (作者签名): 与 #survey.hd-title '心脏检查' 语汇分离, 移至右下作品落款位 */}
       <div
         id="brand"
         aria-hidden="true"
-        className="fixed z-30 top-[22vh] left-4 sm:top-5 sm:left-6 xl:top-8 xl:left-10 text-[11px] sm:text-[12px] xl:text-[clamp(14px,0.85vw,18px)] tracking-[0.32em] font-medium text-[#22262e] whitespace-nowrap"
+        className="fixed z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] left-4 sm:bottom-4 sm:left-6 xl:bottom-6 xl:left-10 text-[10px] xl:text-[11px] tracking-[0.4em] font-medium text-[rgba(34,38,46,0.72)] whitespace-nowrap"
       >
-        ◦ 心脏检查 · 心研-01
+        CARDIA · 心研-01
+      </div>
+
+      {/* P1-2 作者铭文 (POV 落地): 极小极慢淡入的作品说明, 让首访 5s 内区分艺术站 vs 医学产品 */}
+      <div
+        id="artist-imprint"
+        aria-hidden="true"
+        className="fixed z-20 left-1/2 -translate-x-1/2 bottom-[4%] text-[9px] tracking-[0.4em] whitespace-nowrap"
+        style={{ color: 'rgba(52,54,64,0.45)', opacity: 0, transition: 'opacity 1.6s ease-out 3s' }}
+      >
+        标本 · 心研-01 · 2026 · 影像装置
       </div>
 
       {/* 按钮组 (触摸目标 ≥44px, 手机端加 safe-area 让开 iOS home indicator) */}
@@ -228,6 +244,16 @@ export default function App() {
 
       <div id="loading" className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] tracking-[0.4em] text-[rgba(62,66,76,0.6)] transition-opacity duration-700">
         影像校准中…
+      </div>
+
+      {/* P1-1 交互提示: 首次访问 body.ready 后 2.5s 淡入, 10s 后淡出, localStorage 只显示一次 */}
+      <div
+        id="interaction-hint"
+        role="note"
+        className="fixed z-30 left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+16%)] text-[10px] tracking-[0.32em] font-mono whitespace-nowrap pointer-events-none"
+        style={{ color: 'rgba(34,38,46,0.75)', opacity: 0, transition: 'opacity 1.2s ease-out' }}
+      >
+        拖拽 · 点击标记 · 触发扫描
       </div>
 
       <div id="vignette" className="fixed inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 22vmin rgba(44,47,58,0.20)' }} />
