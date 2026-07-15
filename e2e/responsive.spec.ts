@@ -188,5 +188,44 @@ test('G: macro corner brackets 4 个齐全且未被裁切', async ({ page }) => 
   for (const b of boxes) {
     expect(b.t, `corner top ${b.t}`).toBeGreaterThanOrEqual(-2);
     expect(b.b, `corner bottom ${b.b} > vp ${vp.height}`).toBeLessThanOrEqual(vp.height + 2);
-  }
-});
+    }
+    });
+
+    // J: a11y — 3 个按钮都有 accessible name + type=button; canvas 有 aria-label
+    test('J: 按钮有 accessible name, canvas 有 aria-label', async ({ page }) => {
+    const audit = await page.evaluate(() => {
+    const ids = ['rec-btn', 'replay-btn', 'audio-btn'];
+    const btns = ids.map(id => {
+    const el = document.getElementById(id) as HTMLButtonElement | null;
+    if (!el) return { id, missing: true };
+    return {
+      id,
+      type: el.type,
+      ariaLabel: el.getAttribute('aria-label'),
+      hasVisibleText: (el.textContent || '').trim().length > 0,
+    };
+    });
+    const canvas = document.getElementById('gl');
+    return {
+    btns,
+    canvasAriaLabel: canvas?.getAttribute('aria-label'),
+    };
+    });
+    for (const b of audit.btns) {
+    expect(b, `btn ${b.id}`).not.toHaveProperty('missing', true);
+    expect(b.type, `${b.id}.type`).toBe('button');
+    // accessible name = aria-label (若无则回退到 textContent, 但按规范必须有 aria-label)
+    expect(b.ariaLabel, `${b.id} 缺 aria-label`).toBeTruthy();
+    }
+    expect(audit.canvasAriaLabel, 'canvas #gl 缺 aria-label').toBeTruthy();
+    });
+
+    // K: 按钮触摸目标最小尺寸 (WCAG 2.5.5 建议 44×44 CSS px)
+    test('K: 按钮触摸目标 ≥44×44', async ({ page }) => {
+    for (const id of ['rec-btn', 'replay-btn', 'audio-btn']) {
+    const box = await page.locator('#' + id).boundingBox();
+    if (!box) continue;
+    expect(box.width, `${id}.w`).toBeGreaterThanOrEqual(44);
+    expect(box.height, `${id}.h`).toBeGreaterThanOrEqual(44);
+    }
+    });

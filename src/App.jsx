@@ -28,7 +28,9 @@ export default function App() {
     'fixed z-40 font-mono text-[9px] xl:text-[10.5px] tracking-[0.24em] text-[rgba(62,66,76,0.85)] ' +
     'bg-transparent border border-[rgba(62,66,76,0.35)] px-3 xl:px-4 py-1.5 cursor-pointer ' +
     'hover:bg-[rgba(62,66,76,0.08)] hover:text-[#22262e] active:scale-[0.98] transition-colors ' +
-    'min-h-[36px] xl:min-h-[44px] min-w-[84px] xl:min-w-[100px] flex items-center justify-center whitespace-nowrap';
+    'min-h-[44px] xl:min-h-[52px] min-w-[92px] xl:min-w-[112px] flex items-center justify-center whitespace-nowrap ' +
+    // 键盘可访问性: 焦点可见环 (不移除 outline 而是替换成对比强的环)
+    'outline-none focus-visible:ring-2 focus-visible:ring-[rgba(62,66,76,0.8)] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(240,244,238,0.4)]';
 
   return (
     <div id="stage" ref={rootRef} className="fixed inset-0">
@@ -38,9 +40,10 @@ export default function App() {
         style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(46,49,60,0.32), rgba(46,49,60,0) 70%)' }}
       />
 
-      <canvas id="gl" className="absolute inset-0 w-full h-full block" />
+      {/* 心脏 3D 主视图 (装饰性 canvas, 语义在下方面板) */}
+      <canvas id="gl" className="absolute inset-0 w-full h-full block" role="img" aria-label="心脏 3D 交互模型" />
 
-      <svg id="overlay-svg" className="absolute inset-0 w-full h-full pointer-events-none">
+      <svg id="overlay-svg" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
         <defs>
           <filter id="halo" x="-40%" y="-40%" width="180%" height="180%">
             <feDropShadow dx="0" dy="0" stdDeviation="1.4" flood-color="#f6f4ef" flood-opacity="0.95" />
@@ -69,13 +72,13 @@ export default function App() {
           'lg:left-[clamp(12px,5vw,90px)] ' +
           // 宽度
           'sm:w-[24vw] sm:max-w-[220px] ' +
-          'md:w-[240px] lg:w-[280px] xl:w-[clamp(300px,22vw,520px)] ' +
+          'md:w-[260px] lg:w-[340px] xl:w-[clamp(380px,26vw,720px)] ' +
           // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh)
           'max-h-[15vh] sm:max-h-[32vh] md:max-h-none'
         }
       >
         <div className={hdCls}>
-          <span className="hd-title flex items-center gap-1.5"><span className="dot" id="survey-dot"></span> 心脏检查</span>
+          <span className="hd-title flex items-center gap-1.5"><span className="dot" id="survey-dot" aria-hidden="true"></span> 心脏检查</span>
           <span id="scan-state">扫描中</span>
         </div>
         <div className="px-3 pt-2 pb-2 sm:pt-2.5 sm:pb-3">
@@ -89,13 +92,13 @@ export default function App() {
           </div>
           <div
             id="spec-name"
-            className="text-[13px] sm:text-[15px] xl:text-[clamp(18px,1.3vw,28px)] tracking-[0.03em] font-medium text-[#f0f3ee] min-h-[20px] whitespace-nowrap overflow-hidden"
+            className="text-[13px] sm:text-[15px] xl:text-[clamp(18px,1.3vw,28px)] tracking-[0.03em] font-medium text-[#f0f3ee] min-h-[20px] whitespace-nowrap overflow-hidden text-balance"
           >
             <span id="spec-name-txt"></span>
-            <span className="cursor"></span>
+            <span className="cursor" aria-hidden="true"></span>
           </div>
           {/* 以下模块 <sm 不显示 (手机避免面板过高进入心脏区) */}
-          <div id="spec-desc" className="hidden sm:block text-[8.5px] tracking-[0.14em] text-[var(--color-ink-dim)] my-1 min-h-[11px]"></div>
+          <div id="spec-desc" className="hidden sm:block text-[8.5px] tracking-[0.14em] text-[var(--color-ink-dim)] my-1 min-h-[11px] text-pretty"></div>
 
           <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] my-1.5 overflow-visible">
             <polyline id="ecg-line" fill="none" stroke="#a8e6c9" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
@@ -127,18 +130,18 @@ export default function App() {
           'md:right-6 md:top-1/2 md:-translate-y-1/2 ' +
           'lg:right-[clamp(12px,4vw,80px)] ' +
           'sm:w-[22vw] sm:max-w-[210px] ' +
-          'md:w-[220px] lg:w-[260px] xl:w-[clamp(280px,20vw,480px)] ' +
+          'md:w-[240px] lg:w-[320px] xl:w-[clamp(360px,24vw,680px)] ' +
           'sm:max-h-[32vh] md:max-h-none'
         }
       >
         <div className={hdCls}>
-          <span className="hd-title flex items-center gap-1.5"><span className="dot"></span> 显微观测</span>
+          <span className="hd-title flex items-center gap-1.5"><span className="dot" aria-hidden="true"></span> 显微观测</span>
           <span id="macro-mode">跟踪中</span>
         </div>
         <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         <div className="flex">
           <div className="flex-1 bg-[var(--color-panel-bg)] border-l border-[var(--color-panel-line)]" />
-          <div id="macro-window" className="relative outline outline-1 outline-white/5" style={{ width: 'min(100%,clamp(180px,18vw,360px))', aspectRatio: '212/224' }}>
+          <div id="macro-window" className="relative outline outline-1 outline-white/5" style={{ width: 'min(100%,clamp(220px,22vw,540px))', aspectRatio: '212/224' }}>
             <span className="corner tl"></span><span className="corner tr"></span>
             <span className="corner bl"></span><span className="corner br"></span>
             <div id="macro-cross"></div>
@@ -153,20 +156,45 @@ export default function App() {
         </div>
       </div>
 
-      {/* 品牌 */}
+      {/* 品牌 (装饰文字, 与页面 title 同义) */}
       <div
         id="brand"
+        aria-hidden="true"
         className="fixed z-30 top-[22vh] left-4 sm:top-5 sm:left-6 xl:top-8 xl:left-10 text-[9px] sm:text-[10px] xl:text-[clamp(11px,0.75vw,15px)] tracking-[0.24em] sm:tracking-[0.3em] text-[rgba(62,66,76,0.85)] whitespace-nowrap"
       >
         ◦ 心脏检查 · 心研-01
       </div>
 
-      {/* 按钮组: 手机端底部, sm+ 顶栏底下 (避开 hd 面板), md+ 右上角 */}
-      <button id="rec-btn" className={buttonBase + ' rec-btn bottom-3 right-3 sm:bottom-auto sm:top-[76px] sm:right-4 md:top-4 md:right-[236px] lg:right-[260px]'}>● 录制</button>
-      <button id="replay-btn" className={buttonBase + ' replay-btn bottom-3 right-[96px] sm:bottom-auto sm:top-[76px] sm:right-[100px] md:top-4 md:right-[128px] lg:right-[152px]'}>↻ 重播</button>
-      <button id="audio-btn" className={buttonBase + ' audio-btn bottom-3 right-[192px] sm:bottom-auto sm:top-[76px] sm:right-[196px] md:top-4 md:right-6'}>声音 关</button>
-      {/* 提示放按钮下方, 明显错开 (min-h 44+ 8px) */}
-      <div id="audio-hint" className="fixed z-40 text-[8px] xl:text-[9.5px] tracking-[0.2em] text-[rgba(62,66,76,0.55)] whitespace-nowrap bottom-[54px] right-[192px] sm:bottom-auto sm:top-[128px] sm:right-[196px] md:top-[70px] md:right-6">点击启用声音</div>
+      {/* 按钮组 (触摸目标 ≥44px, 手机端加 safe-area 让开 iOS home indicator) */}
+      <button
+        id="rec-btn"
+        type="button"
+        aria-label="切换录制"
+        aria-pressed="false"
+        className={buttonBase + ' rec-btn bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] right-3 sm:bottom-auto sm:top-[76px] sm:right-4 md:top-4 md:right-[248px] lg:right-[276px]'}
+      >
+        <span aria-hidden="true">● </span>录制
+      </button>
+      <button
+        id="replay-btn"
+        type="button"
+        aria-label="重播扫描"
+        className={buttonBase + ' replay-btn bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] right-[108px] sm:bottom-auto sm:top-[76px] sm:right-[112px] md:top-4 md:right-[132px] lg:right-[152px]'}
+      >
+        <span aria-hidden="true">↻ </span>重播
+      </button>
+      <button
+        id="audio-btn"
+        type="button"
+        aria-label="切换声音开关"
+        aria-pressed="false"
+        aria-describedby="audio-hint"
+        className={buttonBase + ' audio-btn bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] right-[212px] sm:bottom-auto sm:top-[76px] sm:right-[216px] md:top-4 md:right-6'}
+      >
+        声音 <span id="audio-state">关</span>
+      </button>
+      {/* 提示 (由 audio-btn aria-describedby 关联, role=note 让屏幕阅读器不当独立控件) */}
+      <div id="audio-hint" role="note" className="fixed z-40 text-[8px] xl:text-[9.5px] tracking-[0.2em] text-[rgba(52,54,64,0.8)] whitespace-nowrap bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] right-[212px] sm:bottom-auto sm:top-[136px] sm:right-[216px] md:top-[84px] md:right-6">点击启用声音</div>
 
       <div
         id="complete"

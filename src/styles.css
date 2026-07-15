@@ -12,7 +12,7 @@
 }
 
 /* ============ 基础 ============ */
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100dvh; overflow: hidden; }
 body {
   font-family: var(--font-serif);
   background: radial-gradient(135% 105% at 68% 26%, #edeef1 0%, #dbdde2 44%, #c4c6cd 78%, #b3b5be 100%);
@@ -134,7 +134,7 @@ body.ready #survey, body.ready #macro, body.ready #brand { translate: 0 0; }
 body.ready #survey, body.ready #macro, body.ready #brand,
 body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.ready .rec-btn { opacity: 1; }
 
-/* film grain */
+/* film grain (装饰性噪声, 全屏 4× 面积, 用 will-change 提升到 GPU 层避免每帧 paint) */
 #grain {
   position: fixed;
   inset: -50%;
@@ -146,6 +146,8 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation: grain 0.7s steps(3) infinite;
+  will-change: transform;
+  contain: strict;
 }
 @keyframes grain {
   0% { transform: translate(0, 0) }
@@ -168,11 +170,22 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
     bottom: 8px !important;
   }
   #rec-btn { right: 12px !important; }
-  #replay-btn { right: 104px !important; }
-  #audio-btn { right: 196px !important; }
+  #replay-btn { right: 116px !important; }
+  #audio-btn { right: 220px !important; }
   #audio-hint {
     top: auto !important;
-    bottom: 48px !important;
-    right: 196px !important;
+    bottom: 56px !important;
+    right: 220px !important;
+  }
+}
+
+/* 尊重系统 reduced-motion: 停止所有装饰性循环动画 (3D 心脏交互不受影响) */
+@media (prefers-reduced-motion: reduce) {
+  #grain { animation: none !important; }
+  .dot, .cursor { animation: none !important; }
+  .rec-btn::before { animation: none !important; }
+  #survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn {
+    transition: opacity 0.15s ease-out !important;
+    translate: 0 0 !important;
   }
 }
