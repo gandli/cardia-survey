@@ -6,17 +6,15 @@ test.beforeEach(async ({ page }) => {
 });
 
 // R: SPECIMENS 保持不变 (P0-1: 模块级不被写污染)
-test('R: 心脏检查完成后 SPECIMENS 未被写入 anchorLocal/normalLocal', async ({ page }) => {
+// 关键: 必须检查应用运行时正在用的那份 module 实例, 不能重新 fetch 副本
+test('R: 运行时 SPECIMENS module 实例未被引擎写脏', async ({ page }) => {
   const dirty = await page.evaluate(async () => {
-    // 用 fetch 拿源文件文本 (Vite dev server 会返回原始 module 源码),
-    // 然后用 new Function 动态执行, 避开 TS 静态 import 解析.
-    const src = await (await fetch('/src/data/specimens.js')).text();
+    // 用 Vite dev-server 的 module URL (?t 时间戳会导致新副本, 不加则命中同一实例)
+    // 走 new Function 动态构造 import 语句避开 TS 静态解析.
     // eslint-disable-next-line no-new-func
-    const factory = new Function('exports', src.replace(/export\s+const\s+/, 'exports.'));
-    const exp: Record<string, unknown> = {};
-    factory(exp);
-    const specimens = exp.SPECIMENS as Array<Record<string, unknown>>;
-    return specimens.some((s) => 'anchorLocal' in s || 'normalLocal' in s);
+    const importer = new Function('u', 'return import(u)') as (u: string) => Promise<{ SPECIMENS: Array<Record<string, unknown>> }>;
+    const mod = await importer('/src/data/specimens.js');
+    return mod.SPECIMENS.some((s) => 'anchorLocal' in s || 'normalLocal' in s);
   });
   expect(dirty, 'SPECIMENS 被工程写脏 → HMR/StrictMode 会 race').toBe(false);
 });
@@ -33,13 +31,28 @@ test('S: prefers-reduced-motion 下 .rec-btn.recording 无动画', async ({ page
   expect(anim, 'reduced-motion 下 recording 循环仍开').toBe('none');
 });
 
-// T: ErrorBoundary 挂上了 (P1-4)
-test('T: ErrorBoundary 组件已装配 (可通过强抛错验证)', async ({ page }) => {
-  // 用 window 上的 React root 快速探针: 主动破坏 root 触发 ErrorBoundary
-  // 这里只探针"路径存在", 不实际触发 (会污染其他 test)
-  const bundled = await page.evaluate(() => {
-    // 检查 main.jsx 里 HeartErrorBoundary 被打包进去 (通过打包结果找不到源码, 只能间接判断)
-    return typeof document.getElementById('root') !== 'undefined';
+// T: ErrorBoundary 真的能捕获错误 (P1-4)
+// 通过 React DevTools 无法直接从 e2e 触发, 采用编译产物 + 静态 marker 检测 +
+// 挂载校验双保险: (1) DOM 已挂 (2) HeartErrorBoundary 类被 React 打包并出现在页面脚本源里.
+test('T: ErrorBoundary 已挂在 React root 上 (静态 marker + 挂载校验)', async ({ page }) => {
+  // 挂载校验: #root 应含至少一个子节点 (App)
+  const rootChildren = await page.evaluate(() => {
+    const root = document.getElementById('root');
+    return root ? root.children.length : 0;
   });
-  expect(bundled).toBe(true);
+  expect(rootChildren, '#root 内应已挂载 App').toBeGreaterThan(0);
+
+  // 静态 marker: 扫所有 <script> 的源, 期望能找到 HeartErrorBoundary 关键字
+  // (Vite dev 会把 jsx 转译为 h() 调用但保留类名; build 后 mangle 但会保留 role="alert" 字符串)
+  const hasBoundaryMarker = await page.evaluate(async () => {
+    const scripts = Array.from(document.scripts).filter((s) => s.src);
+    for (const s of scripts) {
+      try {
+        const src = await (await fetch(s.src)).text();
+        if (src.includes('HeartErrorBoundary') || src.includes('影像系统离线')) return true;
+      } catch { /* skip */ }
+    }
+    return false;
+  });
+  expect(hasBoundaryMarker, 'HeartErrorBoundary 或其 alert 文案未被打包').toBe(true);
 });

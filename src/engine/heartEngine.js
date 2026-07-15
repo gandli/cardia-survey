@@ -266,6 +266,12 @@ export class HeartEngine {
         recDisplay = await navigator.mediaDevices.getDisplayMedia({
           video: { frameRate: 60, cursor: 'never' }, audio: false, preferCurrentTab: true,
         });
+        // Gemini High: getDisplayMedia 弹框期间组件可能已卸载 → 立即停 tracks 并 return
+        if (this.destroyed) {
+          recDisplay.getTracks().forEach((t) => t.stop());
+          recDisplay = null;
+          return;
+        }
         if (!this.Audio.enabled) { audioArmed = true; setAudio(this.Audio.toggle()); }
         const audioStream = this.Audio.captureStream();
         const mixed = new MediaStream([...recDisplay.getVideoTracks(), ...audioStream.getAudioTracks()]);

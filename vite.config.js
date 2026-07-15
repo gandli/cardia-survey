@@ -10,7 +10,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          three: ['three', 'three/addons/loaders/GLTFLoader.js'],
+          three: [
+            'three',
+            'three/addons/loaders/GLTFLoader.js',
+            'three/addons/environments/RoomEnvironment.js',
+          ],
         },
       },
     },
