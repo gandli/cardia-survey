@@ -96,6 +96,7 @@ export class HeartEngine {
 
     const loader = new GLTFLoader();
     loader.load('assets/heart.glb', (gltf) => {
+      if (this.destroyed) return; // 卸载后忽略异步回调 (Gemini P1)
       const model = gltf.scene;
       model.traverse((o) => {
         if (o.isMesh) {
@@ -149,7 +150,7 @@ export class HeartEngine {
 
   _initAudio() {
     const Audio = (() => {
-      let ctx = null, master = null, ambGain = null, enabled = false, recTap = null;
+      let ctx = null, master = null, ambGain = null, enabled = false, recDest = null;
       const ensure = () => {
         if (ctx) return;
         ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -158,7 +159,9 @@ export class HeartEngine {
         comp.attack.value = 0.004; comp.release.value = 0.20;
         const makeup = ctx.createGain(); makeup.gain.value = 1.5;
         comp.connect(makeup).connect(ctx.destination);
-        recTap = makeup;
+        // 录制专用旁路: makeup -> MediaStreamDestination, 保留原路径到扬声器
+        recDest = ctx.createMediaStreamDestination();
+        makeup.connect(recDest);
         master = ctx.createGain(); master.gain.value = 0; master.connect(comp);
         const len = ctx.sampleRate * 2;
         const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -220,13 +223,14 @@ export class HeartEngine {
       return {
         get enabled() { return enabled; },
         toggle() { ensure(); enabled = !enabled; master.gain.linearRampToValueAtTime(enabled ? 0.6 : 0, ctx.currentTime + 0.1); return enabled; },
-        captureStream() { return recTap ? new MediaStream([recTap.stream ? recTap.stream : recTap.context.createMediaStreamDestination().stream]) : new MediaStream(); },
+        captureStream() { ensure(); return recDest ? recDest.stream : new MediaStream(); },
         scrambleTick() { tone(1400 + Math.random() * 400, 0.03, { type: 'square', gain: 0.015 }); },
         whoosh() { noiseBurst(0.5, 180, 900, 0.05); },
         complete() { tone(523, 0.5, { gain: 0.1 }); tone(784, 0.7, { gain: 0.08, when: 0.18 }); },
         heartbeat(period) { thump(58, 0.18, 0.5, 0); thump(46, 0.22, 0.32, period * 0.28); },
         scanTick() { tone(900, 0.05, { type: 'triangle', gain: 0.03 }); },
         lock() { tone(1320, 0.12, { type: 'sine', gain: 0.05 }); },
+        close() { if (ctx) { try { ctx.close(); } catch { /* noop */ } ctx = null; enabled = false; recDest = null; master = null; ambGain = null; } },
       };
     })();
     this.Audio = Audio;
@@ -291,7 +295,11 @@ export class HeartEngine {
       e.stopPropagation();
       if (mediaRec && mediaRec.state === 'recording') stopRecording(); else startRecording();
     });
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') stopRecording(); });
+    // 保存 keydown handler 以便 destroy() 清理
+    this._onKeyDown = (e) => { if (e.key === 'Escape') stopRecording(); };
+    window.addEventListener('keydown', this._onKeyDown);
+    // 暴露 stop 以便 destroy() 主动停止录制
+    this._stopRecording = stopRecording;
   }
 
   _initHUD() {
@@ -341,6 +349,7 @@ export class HeartEngine {
     const miniId = node.id ? 'mini-' + node.id.slice(4) : null;
     const mini = miniId ? document.getElementById(miniId) : null;
     const step = () => {
+      if (this.destroyed) return; // 组件卸载后停止动画
       const k = Math.min(1, (performance.now() - start) / dur);
       const e = 1 - Math.pow(1 - k, 3);
       const v = (from + (to - from) * e).toFixed(2);
@@ -462,10 +471,12 @@ export class HeartEngine {
       if (miniHr) miniHr.textContent = String(currentHr);
     };
 
-    let lastFrameS = null, rotAngle = 0, introStart = null, specShownAt = -99, ringStart = -99, lastBeatIdx = -1;
+    let lastFrameS = null;
+    // 状态统一放 this.* (CodeRabbit + Codex Major: 之前闭包版每帧反向覆盖实例字段导致 _showSpecimen/_restartSurvey 写入失效)
     this.introStart = null; this.rotAngle = 0; this.specShownAt = -99; this.ringStart = -99; this.lastBeatIdx = -1;
 
     const render = (nowMs) => {
+      if (this.destroyed) return; // 组件卸载后停止 (Gemini)
       this._raf = requestAnimationFrame(render);
       const t = nowMs / 1000;
       const dt = lastFrameS === null ? 0.016 : Math.min(0.05, t - lastFrameS);
@@ -477,17 +488,16 @@ export class HeartEngine {
       renderECG();
       updateHr(t);
       const beatIdx = Math.floor(t / BEAT_PERIOD);
-      if (beatIdx !== lastBeatIdx) { lastBeatIdx = beatIdx; this.Audio.heartbeat(BEAT_PERIOD); }
+      if (beatIdx !== this.lastBeatIdx) { this.lastBeatIdx = beatIdx; this.Audio.heartbeat(BEAT_PERIOD); }
 
       const { heartLoaded, heartModel } = this._getHeart();
       if (heartLoaded) {
-        if (introStart === null) introStart = t;
-        this.introStart = introStart; this.rotAngle = rotAngle; this.specShownAt = specShownAt; this.ringStart = ringStart; this.lastBeatIdx = lastBeatIdx;
-        const intro = THREE.MathUtils.clamp((t - introStart) / 1.25, 0, 1);
+        if (this.introStart === null) this.introStart = t;
+        const intro = THREE.MathUtils.clamp((t - this.introStart) / 1.25, 0, 1);
         const introE = 1 - Math.pow(1 - intro, 3);
-        const present = THREE.MathUtils.smoothstep(t - specShownAt, 0.2, 1.6);
-        rotAngle += dt * (0.018 + 0.055 * present) * introE;
-        this.rockGroup.rotation.y = rotAngle;
+        const present = THREE.MathUtils.smoothstep(t - this.specShownAt, 0.2, 1.6);
+        this.rotAngle += dt * (0.018 + 0.055 * present) * introE;
+        this.rockGroup.rotation.y = this.rotAngle;
         this.rock.scale.setScalar(introE * (1 - 0.032 * contract));
         this.rock.position.y = -0.018 * contract;
         this.renderer.toneMappingExposure = 0.98 + 0.05 * contract;
@@ -509,7 +519,7 @@ export class HeartEngine {
       }
 
       if (this.phase === 'scan') {
-        if (this.specIdx < 0) { if (t - introStart > 1.2) this._nextSpecimen(); }
+        if (this.specIdx < 0) { if (t - this.introStart > 1.2) this._nextSpecimen(); }
         else if (t - this.phaseStart > this.SCAN_DUR) this._nextSpecimen();
         else if (!this.archivedShown && t - this.phaseStart > this.SCAN_DUR - 0.65) {
           this.archivedShown = true;
@@ -535,7 +545,7 @@ export class HeartEngine {
         const pr = this.surveyPanel.getBoundingClientRect();
         const x0 = pr.right, y0 = pr.top + 52;
         const mx = x0 + (sx - x0) * 0.45;
-        const dw = THREE.MathUtils.clamp((t - specShownAt) / 0.5, 0, 1);
+        const dw = THREE.MathUtils.clamp((t - this.specShownAt) / 0.5, 0, 1);
         const de = 1 - Math.pow(1 - dw, 3);
         const ex = mx + (sx - mx) * de, ey = y0 + (sy - y0) * de;
         const dPath = `M ${x0} ${y0} L ${mx} ${y0} L ${ex} ${ey}`;
@@ -550,7 +560,7 @@ export class HeartEngine {
         const target = 0.5 * THREE.MathUtils.smoothstep(dw, 0.6, 1) * faceO;
         this._scanU.uScanStrength.value += (target - this._scanU.uScanStrength.value) * Math.min(1, dt * 8);
         this._scanU.uScanRadius.value = 0.5 + 0.04 * Math.sin(t * 3);
-        const rt = t - ringStart;
+        const rt = t - this.ringStart;
         if (rt >= 0 && rt < 0.75) { const re = rt / 0.75; this._scanU.uRingRadius.value = re * 1.15; this._scanU.uRingStrength.value = (1 - re) * 0.85; }
         else this._scanU.uRingStrength.value = 0;
         this.macroCam.position.copy(worldAnchor)
@@ -581,8 +591,19 @@ export class HeartEngine {
   }
 
   destroy() {
+    this.destroyed = true;
     if (this._raf) cancelAnimationFrame(this._raf);
     window.removeEventListener('resize', this._resize);
+    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
+    // 停止录制 + 清理定时器 (Gemini P1)
+    try { this._stopRecording?.(); } catch { /* noop */ }
+    // 清理 scramble 定时器
+    if (this.scramblers) {
+      for (const iv of this.scramblers.values()) clearInterval(iv);
+      this.scramblers.clear();
+    }
+    // 关闭 AudioContext (CodeRabbit Major)
+    try { this.Audio?.close?.(); } catch { /* noop */ }
     document.body.classList.remove('ready', 'capturing');
     this.renderer.dispose();
   }

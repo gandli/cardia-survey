@@ -36,8 +36,12 @@ async function assertNoHeartOcclusion(page: Page, panelIds: string[]) {
 async function assertInsideViewport(page: Page, ids: string[]) {
   const vp = page.viewportSize()!;
   for (const id of ids) {
-    const box = await page.locator('#' + id).boundingBox();
-    if (!box) continue;
+    const el = await page.$('#' + id);
+    if (!el) throw new Error(`#${id} 应该存在于 DOM`);
+    const displayNone = await el.evaluate((n) => getComputedStyle(n).display === 'none');
+    if (displayNone) continue; // 设计意图: 部分 HUD 在小尺寸隐藏
+    const box = await el.boundingBox();
+    if (!box) throw new Error(`#${id} 可见但无 boundingBox`);
     expect(box.x, `#${id} x`).toBeGreaterThanOrEqual(-1);
     expect(box.y, `#${id} y`).toBeGreaterThanOrEqual(-1);
     expect(box.x + box.width, `#${id} right (vp=${vp.width})`).toBeLessThanOrEqual(vp.width + 1);
