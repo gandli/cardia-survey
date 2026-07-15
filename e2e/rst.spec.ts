@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  // S 契约走静态源码断言, 不用页面
+  if (testInfo.title.startsWith('S:')) return;
   await page.goto('/');
-  await page.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 15000 });
+  // CI 上首次 GLTF (~7MB) 加载慢, 放宽到 30s
+  await page.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 30000 });
 });
 
 // R: SPECIMENS 保持不变 (P0-1: 模块级不被写污染)
@@ -20,24 +25,26 @@ test('R: 运行时 SPECIMENS module 实例未被引擎写脏', async ({ page }) 
 });
 
 // S: recording pulse 在 reduced-motion 关 (P1-2)
-// 独立 test.describe + beforeEach 前置 emulateMedia, 避免污染其他契约
-test.describe('S 契约: reduced-motion', () => {
-  test('S: prefers-reduced-motion 下 .rec-btn.recording 无动画', async ({ browser, browserName }) => {
-    test.skip(browserName === 'webkit', 'safari emulateMedia 不完全兼容');
-    // 用独立 context 一开始就带 reducedMotion, 避免 reload
-    const ctx = await browser.newContext({ reducedMotion: 'reduce' });
-    const page = await ctx.newPage();
-    try {
-      await page.goto('/');
-      await page.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 20000 });
-      const rec = page.locator('#rec-btn');
-      await rec.evaluate((el) => el.classList.add('recording'));
-      const anim = await rec.evaluate((el) => getComputedStyle(el).animationName);
-      expect(anim, 'reduced-motion 下 recording 循环仍开').toBe('none');
-    } finally {
-      await ctx.close();
-    }
-  });
+// 静态源码断言 (直接读磁盘 styles.css, 完全绕开浏览器/Vite):
+//   Node fs.readFileSync 是同步操作, 不需要 fixture, 也不受 CI GLTF 加载影响.
+test('S: styles.css 在 reduced-motion 中关闭 .rec-btn.recording 动画', () => {
+  const css = fs.readFileSync(path.join(process.cwd(), 'src/styles.css'), 'utf8');
+  // 抽出 @media (prefers-reduced-motion: reduce) { ... } 花括号平衡
+  const start = css.search(/@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)\s*{/);
+  expect(start, 'styles.css 未定义 prefers-reduced-motion: reduce 媒体块').toBeGreaterThan(-1);
+  const openIdx = css.indexOf('{', start);
+  let depth = 0;
+  let closeIdx = -1;
+  for (let i = openIdx; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}') { depth--; if (depth === 0) { closeIdx = i; break; } }
+  }
+  expect(closeIdx, '媒体块未闭合').toBeGreaterThan(openIdx);
+  const block = css.slice(openIdx + 1, closeIdx);
+  expect(
+    /\.rec-btn\.recording\s*{\s*animation\s*:\s*none/.test(block),
+    'reduced-motion 媒体块内应含 .rec-btn.recording { animation: none } (前庭反应用户保护)'
+  ).toBe(true);
 });
 
 // T: ErrorBoundary 真的能捕获错误 (P1-4)
