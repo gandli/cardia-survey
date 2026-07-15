@@ -154,8 +154,10 @@ export default function App() {
           'sm:max-h-[32vh] md:max-h-[90vh]'
         }
       >
-        {/* 手机 88px 缩略只保留 macro-window 本体; sm+ 才显示 hd/底部信息栏 */}
-        <div className={hdCls + ' hidden sm:grid'}>
+        {/* 手机 88px 缩略只保留 macro-window 本体; sm+ 才显示 hd/底部信息栏.
+            Gemini High: hdCls 已含 grid, 直接拼 'hidden sm:grid' 同优先级会依赖 tailwind
+            输出顺序. 改用 sm:grid 生效于 sm+, 手机默认从 hdCls 覆盖为 hidden */}
+        <div className={hdCls + ' !hidden sm:!grid'}>
           <span className="hd-title flex items-center gap-1.5"><span className="dot" aria-hidden="true"></span> 显微观测</span>
           <span id="macro-mode">跟踪中</span>
         </div>
@@ -190,12 +192,14 @@ export default function App() {
         CARDIA · 心研-01
       </div>
 
-      {/* P1-2 作者铭文 (POV 落地): 极小极慢淡入的作品说明, 让首访 5s 内区分艺术站 vs 医学产品 */}
+      {/* P1-2 作者铭文 (POV 落地): 极小极慢淡入的作品说明, 让首访 5s 内区分艺术站 vs 医学产品.
+          初始不可见 + 3s delay + 1.6s 淡入 由 styles.css 的 @layer components 单独声明,
+          Gemini/CodeRabbit Critical: 禁用 inline opacity, 否则会压掉 CSS 淡入规则 */}
       <div
         id="artist-imprint"
         aria-hidden="true"
         className="fixed z-20 left-1/2 -translate-x-1/2 bottom-[4%] text-[9px] tracking-[0.4em] whitespace-nowrap"
-        style={{ color: 'rgba(52,54,64,0.45)', opacity: 0, transition: 'opacity 1.6s ease-out 3s' }}
+        style={{ color: 'rgba(52,54,64,0.45)' }}
       >
         标本 · 心研-01 · 2026 · 影像装置
       </div>

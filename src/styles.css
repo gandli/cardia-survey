@@ -236,7 +236,7 @@
  * Tailwind v4 建议用 @layer components 或 @custom-variant. 这里用 components 层保持声明式.
  */
 @layer components {
-  #survey, #macro, #brand, #artist-imprint,
+  #survey, #macro, #brand,
   .audio-btn, #audio-hint, .replay-btn, .rec-btn {
     opacity: 0;
     transition: opacity 0.9s ease-out 0.15s;
@@ -248,7 +248,12 @@
   body.ready #audio-hint,
   body.ready .replay-btn,
   body.ready .rec-btn { opacity: 1; }
-  /* P1-2 artist-imprint 用自己的 3s delay + 1.6s 淡入, ready 后不覆盖 */
+  /* P1-2 artist-imprint 用独立 3s delay + 1.6s 淡入 (与主 UI 分离):
+     CodeRabbit Critical 修复 — inline opacity 已从 JSX 移除, 全权由此规则控制 */
+  #artist-imprint {
+    opacity: 0;
+    transition: opacity 1.6s ease-out 3s;
+  }
   body.ready #artist-imprint { opacity: 1; }
 
   body.capturing .rec-btn,

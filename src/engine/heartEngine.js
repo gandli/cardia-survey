@@ -615,21 +615,32 @@ export class HeartEngine {
     this._raf = requestAnimationFrame(render);
   }
 
-  // impeccable P1-1: 首访交互提示. 2.5s 淡入 → 8s 后淡出, localStorage 记忆一次
+  // impeccable P1-1: 首访交互提示. 2.5s 淡入 → 8s 后淡出, 存储层记忆一次
+  // CodeRabbit Minor: 写入移至淡入时刻, 避免短停留用户 destroy 前未写入陷入循环
+  // Gemini Medium: localStorage 抛错 (隐私模式) 时回退到 sessionStorage
   _showInteractionHint() {
     const hint = this.el('interaction-hint');
     if (!hint) return;
     // reduced-motion 用户: 不弹装饰性覆盖层, aria-label 已经告诉屏幕阅读器操作
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    // 已看过则跳过 (localStorage 可用性 guard, 隐私模式回退到 sessionStorage)
-    try { if (localStorage.getItem('cs.hintSeen') === '1') return; } catch { /* noop */ }
+    // 已看过则跳过 (localStorage 优先, 隐私模式回退 sessionStorage)
+    const readSeen = () => {
+      try { if (localStorage.getItem('cs.hintSeen') === '1') return true; } catch { /* noop */ }
+      try { if (sessionStorage.getItem('cs.hintSeen') === '1') return true; } catch { /* noop */ }
+      return false;
+    };
+    const writeSeen = () => {
+      try { localStorage.setItem('cs.hintSeen', '1'); return; } catch { /* noop */ }
+      try { sessionStorage.setItem('cs.hintSeen', '1'); } catch { /* noop */ }
+    };
+    if (readSeen()) return;
     this._hintTimer1 = setTimeout(() => {
       if (this.destroyed) return;
       hint.style.opacity = '1';
+      writeSeen(); // 淡入即视为已看过 — 避免 destroy() 早清 timer 导致下次重弹
       this._hintTimer2 = setTimeout(() => {
         if (this.destroyed) return;
         hint.style.opacity = '0';
-        try { localStorage.setItem('cs.hintSeen', '1'); } catch { /* noop */ }
       }, 8000);
     }, 2500);
   }

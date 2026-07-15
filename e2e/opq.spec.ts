@@ -37,9 +37,10 @@ test('P: 品牌铭文字号 ≥ 10px 且不与 .hd-title 撞词', async ({ page 
     };
   });
   expect(info.size, `brand fontSize=${info.size}px`).toBeGreaterThanOrEqual(10);
-  // 品牌不再直接含 "心脏检查" 全词, 避免与左面板 header 语汇重复
+  // 品牌不再直接含 '心脏检查' 全词, 避免与左面板 header 语汇重复
+  // CodeRabbit/Gemini Minor: 去掉尾空格避免"末尾撞词"漏检 (brand='CARDIA · 心脏检查' 会被漏)
   const hdWord = info.hdTitle.replace(/^[·\s]+/, '').split(/[\s·]+/).pop() || '';
-  expect(info.brandText, `brand='${info.brandText}' hdTitle='${info.hdTitle}'`).not.toContain(hdWord + ' ');
+  expect(info.brandText, `brand='${info.brandText}' hdTitle='${info.hdTitle}' word='${hdWord}'`).not.toContain(hdWord);
 });
 
 // Q: macro-window 加刻度尺 (强化"显微目镜"仪表感)
