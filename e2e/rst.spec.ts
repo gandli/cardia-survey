@@ -20,15 +20,24 @@ test('R: 运行时 SPECIMENS module 实例未被引擎写脏', async ({ page }) 
 });
 
 // S: recording pulse 在 reduced-motion 关 (P1-2)
-test('S: prefers-reduced-motion 下 .rec-btn.recording 无动画', async ({ page, browserName }) => {
-  test.skip(browserName === 'webkit', 'safari emulateMedia 不完全兼容');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.reload();
-  await page.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 15000 });
-  const rec = page.locator('#rec-btn');
-  await rec.evaluate((el) => el.classList.add('recording'));
-  const anim = await rec.evaluate((el) => getComputedStyle(el).animationName);
-  expect(anim, 'reduced-motion 下 recording 循环仍开').toBe('none');
+// 独立 test.describe + beforeEach 前置 emulateMedia, 避免污染其他契约
+test.describe('S 契约: reduced-motion', () => {
+  test('S: prefers-reduced-motion 下 .rec-btn.recording 无动画', async ({ browser, browserName }) => {
+    test.skip(browserName === 'webkit', 'safari emulateMedia 不完全兼容');
+    // 用独立 context 一开始就带 reducedMotion, 避免 reload
+    const ctx = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    try {
+      await page.goto('/');
+      await page.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 20000 });
+      const rec = page.locator('#rec-btn');
+      await rec.evaluate((el) => el.classList.add('recording'));
+      const anim = await rec.evaluate((el) => getComputedStyle(el).animationName);
+      expect(anim, 'reduced-motion 下 recording 循环仍开').toBe('none');
+    } finally {
+      await ctx.close();
+    }
+  });
 });
 
 // T: ErrorBoundary 真的能捕获错误 (P1-4)
