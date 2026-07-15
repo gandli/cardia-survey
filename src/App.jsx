@@ -21,16 +21,17 @@ export default function App() {
   }, []);
 
   const hdCls =
-    'hd flex justify-between items-center px-2.5 py-2 border border-[var(--color-panel-line)] bg-[var(--color-panel-bg)] ' +
-    'text-[9px] xl:text-[10px] tracking-[0.22em] text-[var(--color-ink-dim)] whitespace-nowrap';
+    'hd grid grid-cols-[1fr_auto] items-center gap-2 px-3 py-2 leading-none border border-[var(--color-panel-line)] bg-[var(--color-panel-bg)] ' +
+    'text-[9px] xl:text-[10px] tracking-[0.22em] text-[var(--color-ink-dim)] whitespace-nowrap min-h-[32px] xl:min-h-[36px]';
 
   const buttonBase =
-    'fixed z-40 font-mono text-[9px] xl:text-[10.5px] tracking-[0.24em] text-[rgba(62,66,76,0.85)] ' +
-    'bg-transparent border border-[rgba(62,66,76,0.35)] px-3 xl:px-4 py-1.5 cursor-pointer ' +
-    'hover:bg-[rgba(62,66,76,0.08)] hover:text-[#22262e] active:scale-[0.98] transition-colors ' +
+    // 高对比 (WCAG AA >4.5:1): 文字 #22262e, 边框 rgba(34,38,46,0.55)
+    'fixed z-40 font-mono text-[10px] xl:text-[11px] tracking-[0.24em] text-[#22262e] font-medium ' +
+    'bg-[rgba(240,244,238,0.55)] backdrop-blur-sm border border-[rgba(34,38,46,0.55)] px-3 xl:px-4 py-1.5 cursor-pointer ' +
+    'hover:bg-[rgba(240,244,238,0.85)] hover:border-[#22262e] active:scale-[0.98] transition-colors ' +
     'min-h-[44px] xl:min-h-[52px] min-w-[92px] xl:min-w-[112px] flex items-center justify-center whitespace-nowrap ' +
-    // 键盘可访问性: 焦点可见环 (不移除 outline 而是替换成对比强的环)
-    'outline-none focus-visible:ring-2 focus-visible:ring-[rgba(62,66,76,0.8)] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(240,244,238,0.4)]';
+    // 键盘可访问性: 焦点可见环
+    'outline-none focus-visible:ring-2 focus-visible:ring-[#22262e] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(240,244,238,0.6)]';
 
   return (
     <div id="stage" ref={rootRef} className="fixed inset-0">
@@ -49,8 +50,8 @@ export default function App() {
             <feDropShadow dx="0" dy="0" stdDeviation="1.4" flood-color="#f6f4ef" flood-opacity="0.95" />
           </filter>
         </defs>
-        <path id="scanline-halo" fill="none" stroke="rgba(246,244,239,0.9)" strokeWidth="2.6" strokeDasharray="1.5 5.5" style={{ mixBlendMode: 'screen' }} />
-        <path id="scanline" fill="none" stroke="rgba(46,42,36,0.92)" strokeWidth="1.1" strokeDasharray="1.5 5.5" filter="url(#halo)" />
+        <path id="scanline-halo" fill="none" stroke="rgba(246,244,239,0.95)" strokeWidth="3.2" strokeDasharray="1.5 5.5" style={{ mixBlendMode: 'screen' }} />
+        <path id="scanline" fill="none" stroke="rgba(34,38,46,0.98)" strokeWidth="1.4" strokeDasharray="1.5 5.5" filter="url(#halo)" />
         <g id="reticle" opacity="0" filter="url(#halo)">
           <circle r="8.6" fill="none" stroke="rgba(246,244,239,0.9)" strokeWidth="2.4" />
           <circle id="ret-outer" r="8" fill="none" stroke="rgba(46,42,36,0.95)" strokeWidth="1.1" />
@@ -73,8 +74,8 @@ export default function App() {
           // 宽度 (max-w 只在 sm, md+ 用 w 直接控制)
           'sm:w-[24vw] sm:max-w-[220px] ' +
           'md:w-[210px] md:max-w-none lg:w-[280px] xl:w-[clamp(340px,22vw,560px)] ' +
-          // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh; md+ 上限 80vh 防超屏)
-          'max-h-[15vh] sm:max-h-[32vh] md:max-h-[80vh] md:overflow-y-auto'
+          // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh; md+ 上限 90vh 防超屏; overflow 可滚动)
+          'max-h-[15vh] sm:max-h-[32vh] md:max-h-[90vh] md:overflow-y-auto'
         }
       >
         <div className={hdCls}>
@@ -100,10 +101,18 @@ export default function App() {
           {/* 以下模块 <sm 不显示 (手机避免面板过高进入心脏区) */}
           <div id="spec-desc" className="hidden sm:block text-[8.5px] tracking-[0.14em] text-[var(--color-ink-dim)] my-1 min-h-[11px] text-pretty"></div>
 
-          <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] my-1.5 overflow-visible">
+          <svg id="ecg" viewBox="0 0 214 26" preserveAspectRatio="none" className="hidden sm:block w-full h-[26px] my-1.5 overflow-visible" aria-hidden="true">
             <polyline id="ecg-line" fill="none" stroke="#a8e6c9" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
             <circle id="ecg-dot" r="1.7" fill="#a8e6c9" />
           </svg>
+
+          {/* 短屏兜底 chip: ECG/meter 无法展开时保留关键数值 (临床可信度) */}
+          <div id="mini-strip" className="hidden text-[9px] tracking-[0.14em] text-[#f0f3ee] tabular-nums my-1.5 flex-wrap gap-x-3 gap-y-0.5">
+            <span>♥ <span id="mini-hr">72</span></span>
+            <span>灌 <span id="mini-vit">0.00</span></span>
+            <span>显 <span id="mini-lum">0.00</span></span>
+            <span>钙 <span id="mini-tox">0.00</span></span>
+          </div>
 
           <div className="hidden sm:block">
             <div className="meter"><span>灌注</span><span className="track"><span className="fill" id="bar-vit"></span></span><span className="val" id="val-vit">0.00</span></div>
@@ -131,7 +140,7 @@ export default function App() {
           'lg:right-[clamp(12px,4vw,80px)] ' +
           'sm:w-[22vw] sm:max-w-[210px] ' +
           'md:w-[200px] md:max-w-none lg:w-[260px] xl:w-[clamp(320px,20vw,520px)] ' +
-          'sm:max-h-[32vh] md:max-h-[80vh]'
+          'sm:max-h-[32vh] md:max-h-[90vh]'
         }
       >
         <div className={hdCls}>
@@ -152,7 +161,7 @@ export default function App() {
           <div className="w-2 sm:w-2.5 bg-[var(--color-panel-bg)] border-r border-[var(--color-panel-line)]" aria-hidden="true" />
         </div>
         <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
-        <div className="flex justify-between px-3 pb-2.5 pt-0.5 text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-3 py-2 leading-none min-h-[32px] xl:min-h-[36px] text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">
           <span id="mag-txt">放大 2.24×</span>
           <span id="sp-txt">SP-01</span>
         </div>
@@ -196,7 +205,7 @@ export default function App() {
         声音 <span id="audio-state">关</span>
       </button>
       {/* 提示 (由 audio-btn aria-describedby 关联, role=note 让屏幕阅读器不当独立控件) */}
-      <div id="audio-hint" role="note" className="fixed z-40 text-[8px] xl:text-[9.5px] tracking-[0.2em] text-[rgba(52,54,64,0.8)] whitespace-nowrap bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] right-[212px] sm:bottom-auto sm:top-[136px] sm:right-[216px] md:top-[84px] md:right-6">点击启用声音</div>
+      <div id="audio-hint" role="note" className="fixed z-40 text-[9px] xl:text-[10px] tracking-[0.2em] font-medium text-[#22262e] whitespace-nowrap bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] right-[212px] sm:bottom-auto sm:top-[136px] sm:right-[216px] md:top-[84px] md:right-6">↑ 点击启用声音</div>
 
       <div
         id="complete"

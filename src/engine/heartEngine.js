@@ -337,10 +337,15 @@ export class HeartEngine {
     if (!node) return;
     const from = parseFloat(node.textContent) || 0;
     const start = performance.now();
+    // 同步 mini chip: node.id=val-vit -> mini-vit, val-lum -> mini-lum, val-tox -> mini-tox
+    const miniId = node.id ? 'mini-' + node.id.slice(4) : null;
+    const mini = miniId ? document.getElementById(miniId) : null;
     const step = () => {
       const k = Math.min(1, (performance.now() - start) / dur);
       const e = 1 - Math.pow(1 - k, 3);
-      node.textContent = (from + (to - from) * e).toFixed(2);
+      const v = (from + (to - from) * e).toFixed(2);
+      node.textContent = v;
+      if (mini) mini.textContent = v;
       if (k < 1) requestAnimationFrame(step);
     };
     step();

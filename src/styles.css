@@ -55,11 +55,11 @@ body::after {
   animation: pulse 1s steps(2) infinite;
 }
 
-/* meter 网格布局 (原版精确复刻) */
+/* meter 网格布局 (标签列 4ch = 4 汉字宽, 数值列固定, 保证对齐; 原版精确复刻) */
 .meter {
   display: grid;
-  grid-template-columns: 26px 1fr 34px;
-  gap: 8px;
+  grid-template-columns: 4ch 1fr 4ch;
+  gap: 10px;
   align-items: center;
   margin: 7px 0;
   font-size: 8.5px;
@@ -124,13 +124,12 @@ body.capturing .replay-btn,
 body.capturing .audio-btn,
 body.capturing #audio-hint { opacity: 0 !important; pointer-events: none; }
 
-/* 入场动画 (CSS 全权管理 translate, 避免 inline style 覆盖) */
-#survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn { opacity: 0; }
-#survey { translate: -34px 0; transition: translate 1s cubic-bezier(.22, 1, .36, 1) .15s, opacity .9s .15s; }
-#macro  { translate: 34px 0;  transition: translate 1s cubic-bezier(.22, 1, .36, 1) .30s, opacity .9s .30s; }
-#brand  { translate: 0 -8px;  transition: translate .8s cubic-bezier(.22, 1, .36, 1), opacity .8s; }
-.audio-btn, #audio-hint, .replay-btn, .rec-btn { transition: opacity .8s .5s; }
-body.ready #survey, body.ready #macro, body.ready #brand { translate: 0 0; }
+/* 入场动画: 用 opacity 淡入 + CSS 变量偏移, 避开 translate 属性以让 Tailwind 的 -translate-y-1/2 正常工作 */
+#survey, #macro, #brand,
+.audio-btn, #audio-hint, .replay-btn, .rec-btn {
+  opacity: 0;
+  transition: opacity 0.9s ease-out 0.15s;
+}
 body.ready #survey, body.ready #macro, body.ready #brand,
 body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.ready .rec-btn { opacity: 1; }
 
@@ -160,10 +159,15 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   #survey, #macro {
     max-height: calc(100vh - 20px) !important;
     top: 8px !important;
+    /* landscape 短屏走 sm/md 布局时 tailwind 的 -translate-y-1/2 仍生效, 强制清零 */
+    translate: 0 0 !important;
+    transform: none !important;
   }
   #macro-window { width: 96px !important; aspect-ratio: 1 !important; }
-  #ecg { display: none; }
-  #survey .meter, #macro .meter { display: none; }
+  #ecg { display: none !important; }
+  #survey .meter, #macro .meter { display: none !important; }
+  /* 关键数据不消失: 用 mini chip 保留 ECG/meter 数值 */
+  #mini-strip { display: flex !important; }
   /* 按钮全部走底部横排, 避开 sm 顶栏 76px 与 macro 冲突 */
   #rec-btn, #replay-btn, #audio-btn {
     top: auto !important;
@@ -186,6 +190,5 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   .rec-btn::before { animation: none !important; }
   #survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn {
     transition: opacity 0.15s ease-out !important;
-    translate: 0 0 !important;
   }
 }
