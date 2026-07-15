@@ -139,13 +139,17 @@ export default function App() {
           <span id="macro-mode">跟踪中</span>
         </div>
         <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
-        <div className="flex px-2 sm:px-2.5 bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]">
-          <div id="macro-window" className="relative outline outline-1 outline-white/5 mx-auto w-full" style={{ aspectRatio: '212/224' }}>
+        {/* 显微图像层: 父容器必须透明, canvas scissor 渲染的心脏特写才能透出;
+            左右内边距由 border 两侧的伪填充块承担, 不给父层加背景 */}
+        <div className="relative flex">
+          <div className="w-2 sm:w-2.5 bg-[var(--color-panel-bg)] border-l border-[var(--color-panel-line)]" aria-hidden="true" />
+          <div id="macro-window" className="relative outline outline-1 outline-white/5 flex-1" style={{ aspectRatio: '212/224' }}>
             <span className="corner tl"></span><span className="corner tr"></span>
             <span className="corner bl"></span><span className="corner br"></span>
             <div id="macro-cross"></div>
             <div id="macro-flash"></div>
           </div>
+          <div className="w-2 sm:w-2.5 bg-[var(--color-panel-bg)] border-r border-[var(--color-panel-line)]" aria-hidden="true" />
         </div>
         <div className="h-[8px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         <div className="flex justify-between px-3 pb-2.5 pt-0.5 text-[8.5px] xl:text-[9.5px] text-[var(--color-ink-dim)] tracking-[0.2em] tabular-nums bg-[var(--color-panel-bg)] border border-t-0 border-[var(--color-panel-line)]">

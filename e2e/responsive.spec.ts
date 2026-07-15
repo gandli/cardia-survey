@@ -92,22 +92,26 @@ test('E: 心脏 canvas 占满视口且渲染', async ({ page }) => {
   expect(box!.height).toBeGreaterThanOrEqual(vp.height - 2);
 });
 
-// F: macro wrapper 必须透明 (原版契约: 只有 hd/ft/strip/side 有底色, wrapper 透明才能透出 canvas 心脏特写)
+// F: macro wrapper 必须透明 + macro-window 到 macro 之间每一层父容器透明 (否则遮挡 canvas 心脏特写)
 test('F: macro 面板外层透明, 内部条带有底色', async ({ page }) => {
   const info = await page.evaluate(() => {
     const macro = document.querySelector('#macro') as HTMLElement;
     const win = document.querySelector('#macro-window') as HTMLElement;
-    const strip = document.querySelector('#macro > div:nth-of-type(2)') as HTMLElement;
     const s = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
-    return {
-      macroBg: s(macro),
-      winBg: s(win),
-      stripBg: strip ? s(strip) : null,
-    };
+    const chain: { tag: string; id: string; bg: string }[] = [];
+    let el: HTMLElement | null = win;
+    while (el && el !== macro) {
+      chain.push({ tag: el.tagName, id: el.id || '', bg: s(el) });
+      el = el.parentElement;
+    }
+    return { macroBg: s(macro), winBg: s(win), chain };
   });
-  // 完全透明 (rgba 第四位 =0) — 允许 rgb(0,0,0,0) / rgba(0,0,0,0) / transparent
-  expect(info.macroBg, `macroBg=${info.macroBg}`).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
-  expect(info.winBg, `winBg=${info.winBg}`).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
+  const transparent = /rgba?\(0,\s*0,\s*0,\s*0\)|transparent/;
+  expect(info.macroBg, `macroBg=${info.macroBg}`).toMatch(transparent);
+  expect(info.winBg, `winBg=${info.winBg}`).toMatch(transparent);
+  for (const c of info.chain) {
+    expect(c.bg, `${c.tag}#${c.id} bg=${c.bg} 遮挡显微图像`).toMatch(transparent);
+  }
 });
 
 // H: 面板标题/元信息不折行 (证明面板宽度合理)
