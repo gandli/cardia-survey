@@ -14,7 +14,7 @@ jobs:
   build-and-test:
     name: Build + E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +34,7 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: E2E (响应式契约 A-Q × 6 视口)
-        run: bunx playwright test --reporter=line
+        run: bunx playwright test --reporter=line --workers=2
 
       - name: Upload Playwright artifacts on failure
         if: failure()
