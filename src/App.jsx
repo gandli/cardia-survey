@@ -69,7 +69,7 @@ export default function App() {
           'lg:left-[clamp(12px,5vw,90px)] ' +
           // 宽度
           'sm:w-[24vw] sm:max-w-[220px] ' +
-          'md:w-[240px] lg:w-[260px] xl:w-[clamp(260px,17vw,320px)] ' +
+          'md:w-[240px] lg:w-[280px] xl:w-[clamp(300px,22vw,520px)] ' +
           // 高度上限 (base 手机 y 至多 15vh, zone.t=20vh)
           'max-h-[15vh] sm:max-h-[32vh] md:max-h-none'
         }
@@ -89,7 +89,7 @@ export default function App() {
           </div>
           <div
             id="spec-name"
-            className="text-[13px] sm:text-[15px] xl:text-[17px] tracking-[0.03em] font-medium text-[#f0f3ee] min-h-[20px] whitespace-nowrap overflow-hidden"
+            className="text-[13px] sm:text-[15px] xl:text-[clamp(18px,1.3vw,28px)] tracking-[0.03em] font-medium text-[#f0f3ee] min-h-[20px] whitespace-nowrap overflow-hidden"
           >
             <span id="spec-name-txt"></span>
             <span className="cursor"></span>
@@ -127,7 +127,7 @@ export default function App() {
           'md:right-6 md:top-1/2 md:-translate-y-1/2 ' +
           'lg:right-[clamp(12px,4vw,80px)] ' +
           'sm:w-[22vw] sm:max-w-[210px] ' +
-          'md:w-[220px] lg:w-[240px] xl:w-[clamp(240px,15vw,300px)] ' +
+          'md:w-[220px] lg:w-[260px] xl:w-[clamp(280px,20vw,480px)] ' +
           'sm:max-h-[32vh] md:max-h-none'
         }
       >
@@ -138,7 +138,7 @@ export default function App() {
         <div className="h-[10px] bg-[var(--color-panel-bg)] border-x border-[var(--color-panel-line)]" />
         <div className="flex">
           <div className="flex-1 bg-[var(--color-panel-bg)] border-l border-[var(--color-panel-line)]" />
-          <div id="macro-window" className="relative outline outline-1 outline-white/5" style={{ width: 'min(100%,212px)', aspectRatio: '212/224' }}>
+          <div id="macro-window" className="relative outline outline-1 outline-white/5" style={{ width: 'min(100%,clamp(180px,18vw,360px))', aspectRatio: '212/224' }}>
             <span className="corner tl"></span><span className="corner tr"></span>
             <span className="corner bl"></span><span className="corner br"></span>
             <div id="macro-cross"></div>
