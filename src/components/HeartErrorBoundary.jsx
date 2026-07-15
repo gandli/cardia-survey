@@ -23,6 +23,30 @@ export class HeartErrorBoundary extends Component {
     console.warn('[cardia-survey] fatal:', err);
   }
 
+  // CodeRabbit Critical: React ErrorBoundary 仅捕获渲染同步错误.
+  // GLTFLoader 异步 Promise / WebGL 事件 / AudioContext 拒绝都走异步或事件通道,
+  // 需要挂全局 error + unhandledrejection 监听, 命中后主动切到兜底态.
+  componentDidMount() {
+    this._onError = (event) => {
+      // 过滤掉资源加载错误 (script/img 404), 只兜致命 JS
+      if (event.error) {
+        console.warn('[cardia-survey] window.error:', event.error);
+        this.setState({ hasError: true });
+      }
+    };
+    this._onRejection = (event) => {
+      console.warn('[cardia-survey] unhandledrejection:', event.reason);
+      this.setState({ hasError: true });
+    };
+    window.addEventListener('error', this._onError);
+    window.addEventListener('unhandledrejection', this._onRejection);
+  }
+
+  componentWillUnmount() {
+    if (this._onError) window.removeEventListener('error', this._onError);
+    if (this._onRejection) window.removeEventListener('unhandledrejection', this._onRejection);
+  }
+
   render() {
     if (!this.state.hasError) return this.props.children;
     return (

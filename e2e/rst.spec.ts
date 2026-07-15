@@ -41,9 +41,12 @@ test('S: styles.css 在 reduced-motion 中关闭 .rec-btn.recording 动画', () 
   }
   expect(closeIdx, '媒体块未闭合').toBeGreaterThan(openIdx);
   const block = css.slice(openIdx + 1, closeIdx);
+  // CodeRabbit Minor: 允许 .rec-btn.recording { 与 animation:none 之间有其他属性
+  const recBlockMatch = block.match(/\.rec-btn\.recording\s*{([^}]*)}/);
+  expect(recBlockMatch, 'reduced-motion 媒体块内应有 .rec-btn.recording 规则块').not.toBeNull();
   expect(
-    /\.rec-btn\.recording\s*{\s*animation\s*:\s*none/.test(block),
-    'reduced-motion 媒体块内应含 .rec-btn.recording { animation: none } (前庭反应用户保护)'
+    /animation\s*:\s*none/.test(recBlockMatch![1]),
+    'reduced-motion.rec-btn.recording 规则块应含 animation: none (前庭反应用户保护)'
   ).toBe(true);
 });
 
