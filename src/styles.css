@@ -221,6 +221,8 @@ body.ready .audio-btn, body.ready #audio-hint, body.ready .replay-btn, body.read
   #grain { animation: none !important; }
   .dot, .cursor { animation: none !important; }
   .rec-btn::before { animation: none !important; }
+  /* P1-2: 录制按钮闪烁属循环装饰,前庭反应用户须关 */
+  .rec-btn.recording { animation: none !important; }
   #survey, #macro, #brand, .audio-btn, #audio-hint, .replay-btn, .rec-btn {
     transition: opacity 0.15s ease-out !important;
   }
