@@ -457,6 +457,15 @@ export class HeartEngine {
       const w = innerWidth, h = innerHeight;
       this.renderer.setSize(w, h, false);
       this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+      // 手机竖屏 (aspect < 1) 心脏太大出框: 按 aspect 反比拉远相机, 让心脏在窄屏也完整
+      // 基准 z=5.9 是宽屏参数 (aspect≈1.6); 竖屏 aspect≈0.46 时拉到 ≈9.4, 心脏缩到 63% 大小
+      const aspect = w / h;
+      const baseZ = 5.9;
+      const targetZ = aspect >= 1.4 ? baseZ : baseZ * (1 + (1.4 - Math.max(aspect, 0.35)) * 0.85);
+      this.camera.position.z = targetZ;
+      // 竖屏 y 微下移, 让心脏中心避开顶部品牌+底部按钮夹层
+      this.camera.position.y = aspect >= 1.4 ? 0.35 : 0.55;
+      this.camera.lookAt(0, 0, 0);
     };
     window.addEventListener('resize', resize); resize();
     this._resize = resize;
@@ -529,7 +538,9 @@ export class HeartEngine {
       this.rockGroup.rotation.z = 0.05 + Math.sin(t * 0.3) * 0.02;
       this.rockGroup.position.y = Math.sin(t * 0.6) * 0.05;
       this.camera.position.x = Math.sin(t * 0.11) * 0.10;
-      this.camera.position.y = 0.35 + Math.sin(t * 0.17) * 0.04;
+      // 竖屏 (aspect<1.4) 相机 y 基准从 0.35 抬到 0.55, 心脏中心下移让开顶栏; 桌面维持 0.35
+      const baseY = (innerWidth / innerHeight) >= 1.4 ? 0.35 : 0.55;
+      this.camera.position.y = baseY + Math.sin(t * 0.17) * 0.04;
       this.camera.lookAt(0, 0, 0);
       const sh = this.el('rockshadow');
       const shk = (1 - Math.sin(t * 0.6) * 0.06) * (1 + 0.05 * contract);
